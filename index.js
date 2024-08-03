@@ -363,8 +363,6 @@ const gen = async(history, userText, hasUserMes)=>{
         });
     }
     await saveChatConditional();
-    // const oChar = this_chid;
-    // setCharacterId(characters.findIndex(it=>it.avatar == settings.character));
     const style = document.createElement('style');
     style.innerHTML = `
         #chat .mes {
