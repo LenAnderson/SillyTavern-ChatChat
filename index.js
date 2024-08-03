@@ -383,7 +383,7 @@ const gen = async(history, userText, hasUserMes)=>{
         'chatchat-content',
         `<story>${story.join('\n')}</story>`,
         extension_prompt_types.IN_CHAT,
-        settings.storyPosition == STORY_POSITION.BEFORE_CHAT ? history.length + 1 : settings.storyDepth,
+        settings.storyPosition == STORY_POSITION.BEFORE_CHAT ? history.length + 2 : settings.storyDepth,
         true,
         extension_prompt_roles.SYSTEM,
     );

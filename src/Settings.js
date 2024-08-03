@@ -237,7 +237,7 @@ export class Settings {
                 description: 'Where in the context the story should be inserted. The story contains the text from all the bot messages between <code>&lt;story&gt;...&lt;/story&gt;</code> as a system/user message.',
                 category: ['Chat', 'Story'],
                 initialValue: this.storyPosition,
-                optionList: Object.entries(STORY_POSITION).map(it=>({ value:it[0], label:it[1] })),
+                optionList: Object.entries(STORY_POSITION).map(it=>({ value:it[1], label:it[1] })),
                 onChange: (it)=>{
                     this.storyPosition = it.value;
                     this.save();
@@ -283,7 +283,7 @@ export class Settings {
         saveSettingsDebounced();
         if (chat_metadata) {
             if (!chat_metadata.chatchat) {
-                chat_metadata.chatchat = { history:[], settings:{}};
+                chat_metadata.chatchat = { history:[], settings:{} };
             }
             chat_metadata.chatchat.settings = {
                 scriptBefore: this.scriptBefore,
