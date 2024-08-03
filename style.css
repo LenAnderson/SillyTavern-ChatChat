@@ -19,6 +19,8 @@
   --userColorText: #ffffff;
   --botColorBg: rgba(0, 0, 255, 0.75);
   --botColorText: #ffffff;
+  --inputColorBg: rgba(0, 0, 0, 0.3);
+  --inputColorText: #ffffff;
   font-size: calc(1em * var(--fontSize));
   filter: drop-shadow(1px 1px 2px var(--black50a));
   z-index: 3000;
@@ -145,10 +147,12 @@
   min-height: calc(3lh + 6px);
   max-height: 50dvh;
   overflow: auto;
+  background-color: var(--inputColorBg);
+  color: var(--inputColorText);
 }
 .stac--input:empty::before {
   content: 'Ask questions';
-  color: #646464;
+  color: color-mix(in srgb, var(--inputColorText), transparent);
 }
 .stac--input:focus:empty::before {
   content: '';

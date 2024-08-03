@@ -23,6 +23,8 @@
 	--userColorText: rgb(255 255 255);
 	--botColorBg: rgb(0 0 255 / 0.75);
 	--botColorText: rgb(255 255 255);
+	--inputColorBg: rgb(0 0 0 / 0.3);
+	--inputColorText: rgb(255 255 255);
 
 	font-size: calc(1em * var(--fontSize));
     filter: drop-shadow(1px 1px 2px var(--black50a));
@@ -156,9 +158,11 @@
 	min-height: calc(3lh + 6px); // 2*3px padding
 	max-height: 50dvh;
 	overflow: auto;
+	background-color: var(--inputColorBg);
+	color: var(--inputColorText);
 	&:empty::before {
 		content: 'Ask questions';
-		color: rgb(100 100 100);
+		color: color-mix(in srgb, var(--inputColorText), transparent);
 	}
 	&:focus:empty::before {
 		content: '';

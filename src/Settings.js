@@ -27,10 +27,12 @@ export class Settings {
     /**@type {number} */ fontSize = 1.0;
     /**@type {WIDTH_TYPE} */ widthType = WIDTH_TYPE.ASIDE;
     /**@type {number} */ width = 0.5;
-    /**@type {string} */ userColorBg = 'rgb(120 120 120 / 0.75)';
-    /**@type {string} */ userColorText = 'rgb(255 255 255)';
-    /**@type {string} */ botColorBg = 'rgb(0 0 255 / 0.75)';
-    /**@type {string} */ botColorText = 'rgb(255 255 255)';
+    /**@type {string} */ userColorBg = 'rgba(120, 120, 120, 0.75)';
+    /**@type {string} */ userColorText = 'rgba(255, 255, 255, 1)';
+    /**@type {string} */ botColorBg = 'rgba(0, 0, 255, 0.75)';
+    /**@type {string} */ botColorText = 'rgba(255, 255, 255, 1)';
+    /**@type {string} */ inputColorBg = 'rgba(0, 0, 0, 0.3)';
+    /**@type {string} */ inputColorText = 'rgba(255, 255, 255, 1)';
 
     // chat settings
     /**@type {string} */ scriptBefore = '';
@@ -167,6 +169,28 @@ export class Settings {
                     onChange: (it)=>{
                         this.botColorText = it.value;
                         /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--botColorText', this.botColorText.toString());
+                        this.save();
+                    },
+                }));
+                this.settingList.push(ColorSetting.fromProps({ id: 'stac--inputColorBg',
+                    name: 'Chat Input Background Color',
+                    description: 'Background color for the chat input field.',
+                    category: ['Global', 'Colors'],
+                    initialValue: this.inputColorBg,
+                    onChange: (it)=>{
+                        this.inputColorBg = it.value;
+                        /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--inputColorBg', this.inputColorBg.toString());
+                        this.save();
+                    },
+                }));
+                this.settingList.push(ColorSetting.fromProps({ id: 'stac--inputColorText',
+                    name: 'Chat Input Text Color',
+                    description: 'Text color for the chat input field.',
+                    category: ['Global', 'Colors'],
+                    initialValue: this.inputColorText,
+                    onChange: (it)=>{
+                        this.inputColorText = it.value;
+                        /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--inputColorText', this.inputColorText.toString());
                         this.save();
                     },
                 }));
