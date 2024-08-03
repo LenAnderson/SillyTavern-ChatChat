@@ -433,11 +433,7 @@ const gen = async(history, userText, hasUserMes)=>{
     await prom;
     mo.disconnect();
     botMes = structuredClone(chat.slice(-1)[0]);
-    makeMessage(botMes, ()=>{
-        if (!botMes) return;
-        history.splice(history.indexOf(botMes), 1);
-        save();
-    }, history.length);
+    dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
     history.push(botMes);
     chat.splice(0, chatClone.length, ...chatClone);
     await executeSlashCommandsWithOptions(`/cut ${chat.length - 2}-{{lastMessageId}}`);
