@@ -187,7 +187,18 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                     swipeRight.addEventListener('click', async()=>{
                         if (mes.swipe_id + 1 >= (mes.swipes ?? [1]).length) {
                             if (mes.is_user) {
-                                //TODO add swipe and open editor
+                                // add swipe and open editor
+                                addSwipe(mes, {
+                                    mes: '',
+                                    extra: {},
+                                    gen_finished: new Date().toLocaleString(),
+                                    gen_started: new Date().toLocaleString(),
+                                    send_date: new Date().toLocaleString(),
+                                });
+                                txt.innerHTML = messageFormatting(mes.mes, mes.name, mes.is_system, mes.is_user, -1);
+                                swipe.textContent = `${(mes.swipe_id ?? 0) + 1} / ${(mes.swipes?.length ?? 1)}`;
+                                dt.textContent = mes.send_date;
+                                edit.click();
                             } else if (history.indexOf(mes) + 1 < history.length) {
                                 //TODO add swipe and open editor? gen in middle? create branch?
                             } else {
@@ -230,6 +241,7 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                             }
                         } else {
                             mes.mes = editor.textContent;
+                            if (mes.swipes) mes.swipes[mes.swipe_id ?? 0] = mes.mes;
                             txt.innerHTML = messageFormatting(mes.mes, mes.name, mes.is_system, mes.is_user, -1);
                             editor.replaceWith(txt);
                             editor = null;
@@ -259,6 +271,31 @@ const makeMessage = (mes, onDelete, replace = null)=>{
     return mesText;
 };
 
+const initSwipes = (mes)=>{
+    if (!mes.swipes) mes.swipes = [mes.mes];
+    if (!mes.swipe_info) mes.swipe_info = [{
+        extra: structuredClone(mes.extra),
+        gen_finished: mes.gen_finished,
+        gen_started: mes.gen_started,
+        send_date: mes.send_date,
+    }];
+};
+const addSwipe = (mes, newMes)=>{
+    initSwipes(mes);
+    mes.swipes.push(newMes.mes);
+    mes.swipe_info.push({
+        extra: structuredClone(newMes.extra),
+        gen_finished: newMes.gen_finished,
+        gen_started: newMes.gen_started,
+        send_date: newMes.send_date,
+    });
+    mes.swipe_id = mes.swipes.length - 1;
+    mes.mes = newMes.mes;
+    mes.extra = newMes.extra;
+    mes.gen_finished = newMes.gen_finished;
+    mes.gen_started = newMes.gen_started;
+    mes.send_date = newMes.send_date;
+};
 const swipeGen = async()=>{
     const usedHistory = structuredClone(history);
     const oBotMes = history.slice(-1).pop();
@@ -268,26 +305,7 @@ const swipeGen = async()=>{
     const text = oUserMes.mes;
     [...dom.messages.children][0].remove();
     const { userMes, botMes } = await gen(usedHistory, text, false);
-    if (!oBotMes.swipes) oBotMes.swipes = [oBotMes.mes];
-    if (!oBotMes.swipe_info) oBotMes.swipe_info = [{
-        extra: structuredClone(oBotMes.extra),
-        gen_finished: oBotMes.gen_finished,
-        gen_started: oBotMes.gen_started,
-        send_date: oBotMes.send_date,
-    }];
-    oBotMes.swipes.push(botMes.mes);
-    oBotMes.swipe_info.push({
-        extra: structuredClone(botMes.extra),
-        gen_finished: botMes.gen_finished,
-        gen_started: botMes.gen_started,
-        send_date: botMes.send_date,
-    });
-    oBotMes.swipe_id = oBotMes.swipes.length - 1;
-    oBotMes.mes = botMes.mes;
-    oBotMes.extra = botMes.extra;
-    oBotMes.gen_finished = botMes.gen_finished;
-    oBotMes.gen_started = botMes.gen_started;
-    oBotMes.send_date = botMes.send_date;
+    addSwipe(oBotMes, botMes);
     makeMessage(oBotMes, ()=>{
         if (!oBotMes) return;
         history.splice(history.indexOf(oBotMes), 1);
