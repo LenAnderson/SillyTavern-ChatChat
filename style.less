@@ -1,0 +1,166 @@
+@import "./UserSettings.style.css";
+
+
+
+.stac--trigger {
+	position: absolute;
+	bottom: 0.125em;
+	right: 0.25em;
+	font-size: 2em;
+	opacity: 0.25;
+	transition: 200ms;
+	cursor: pointer;
+	z-index: 3010;
+	&:hover {
+		opacity: 1;
+	}
+}
+
+.stac--panel {
+	--fontSize: 1.0;
+	--width: 0.5;
+	--userColorBg: rgb(120 120 120 / 0.75);
+	--userColorText: rgb(255 255 255);
+	--botColorBg: rgb(0 0 255 / 0.75);
+	--botColorText: rgb(255 255 255);
+
+	font-size: calc(1em * var(--fontSize));
+    filter: drop-shadow(1px 1px 2px var(--black50a));
+    z-index: 3000;
+    overflow: hidden;
+    border-radius: 10px;
+    aspect-ratio: unset;
+    padding: 5px;
+    display: flex;
+	flex-direction: column;
+	background-color: transparent;
+    container-type: inline-size;
+
+	position: absolute;
+    bottom: 0;
+    right: 0;
+    max-height: calc(100dvh - 5px);
+    max-width: unset;
+    width: calc((100vw - var(--sheldWidth)) / 2);
+	&.stac--unlocked {
+		width: calc((100dvw - var(--nav-bar-width)) * var(--width));
+	}
+    transition: calc(1ms * var(--stcdx--transitionTime));
+	// transition-timing-function: cubic-bezier(0,.36,1,-0.25);
+	transform-origin: calc(100% - 1em) calc(100% - 1em);
+	scale: 0;
+	&.stac--active {
+		scale: 1;
+	}
+
+	.stac--messages {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column-reverse;
+		overflow-x: clip;
+		overflow-y: auto;
+		> .stac--message {
+			padding: 0 10px;
+			width: auto;
+			transition: transform 400ms;
+			display: block;
+			&.stac--user {
+				margin-left: 5em;
+				background-color: var(--userColorBg);
+				color: var(--userColorText);
+			}
+			&.stac--bot {
+				margin-right: 3em;
+				background-color: var(--botColorBg);
+				color: var(--botColorText);
+			}
+			&.stac--remove {
+				transform: translateX(150%);
+				z-index: -1;
+			}
+			.stac--content {
+				line-height: 1.5em;
+				p:last-child {
+					margin-bottom: 0;
+				}
+				pre {
+					margin: 0;
+					font-size: smaller;
+				}
+			}
+		}
+	}
+}
+
+.stac--avatar {
+	position: absolute;
+    top: -1.4em;
+    left: 0;
+    height: 2.75em;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 50%;
+}
+.stac--avatarImg {
+	height: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	object-position: center;
+}
+
+.stac--details {
+	background-color: rgba(120, 120, 120, 0.5);
+    border-bottom: 1px solid black;
+    margin: 0 -10px 0 calc(1.25em - 10px);
+    border-radius: 10px 10px 0 0;
+    padding: 0 10px 0 calc(9.5px + 1.25em);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	.stac--user & {
+		margin-left: -10px;
+		padding-left: 10px;
+	}
+}
+.stac--date {
+	font-size: 0.75em;
+	opacity: 0.5;
+}
+.stac--actions {
+	font-size: 0.75em;
+	display: flex;
+	gap: 0.5em;
+}
+.stac--info {
+	margin: 0 -0.5em;
+	opacity: 0.5;
+}
+.stac--action {
+	aspect-ratio: 1 / 1;
+    text-align: center;
+    height: calc(4px + 1.2lh);
+    padding: 2px;
+    opacity: 0.5;
+    transition: 200ms;
+	cursor: pointer;
+	&:hover {
+		opacity: 1;
+	}
+}
+
+.stac--form {
+	flex: 0 0 auto;
+	margin-right: 2.25rem;
+}
+.stac--input {
+	min-height: calc(3lh + 6px); // 2*3px padding
+	max-height: 50dvh;
+	overflow: auto;
+	&:empty::before {
+		content: 'Ask questions';
+		color: rgb(100 100 100);
+	}
+	&:focus:empty::before {
+		content: '';
+	}
+}

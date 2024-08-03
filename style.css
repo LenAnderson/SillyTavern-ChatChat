@@ -1,0 +1,155 @@
+@import "UserSettings.style.css";
+.stac--trigger {
+  position: absolute;
+  bottom: 0.125em;
+  right: 0.25em;
+  font-size: 2em;
+  opacity: 0.25;
+  transition: 200ms;
+  cursor: pointer;
+  z-index: 3010;
+}
+.stac--trigger:hover {
+  opacity: 1;
+}
+.stac--panel {
+  --fontSize: 1;
+  --width: 0.5;
+  --userColorBg: rgba(120, 120, 120, 0.75);
+  --userColorText: #ffffff;
+  --botColorBg: rgba(0, 0, 255, 0.75);
+  --botColorText: #ffffff;
+  font-size: calc(1em * var(--fontSize));
+  filter: drop-shadow(1px 1px 2px var(--black50a));
+  z-index: 3000;
+  overflow: hidden;
+  border-radius: 10px;
+  aspect-ratio: unset;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  container-type: inline-size;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  max-height: calc(100dvh - 5px);
+  max-width: unset;
+  width: calc((100vw - var(--sheldWidth)) / 2);
+  transition: calc(1ms * var(--stcdx--transitionTime));
+  transform-origin: calc(100% - 1em) calc(100% - 1em);
+  scale: 0;
+}
+.stac--panel.stac--unlocked {
+  width: calc((100dvw - var(--nav-bar-width)) * var(--width));
+}
+.stac--panel.stac--active {
+  scale: 1;
+}
+.stac--panel .stac--messages {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow-x: clip;
+  overflow-y: auto;
+}
+.stac--panel .stac--messages > .stac--message {
+  padding: 0 10px;
+  width: auto;
+  transition: transform 400ms;
+  display: block;
+}
+.stac--panel .stac--messages > .stac--message.stac--user {
+  margin-left: 5em;
+  background-color: var(--userColorBg);
+  color: var(--userColorText);
+}
+.stac--panel .stac--messages > .stac--message.stac--bot {
+  margin-right: 3em;
+  background-color: var(--botColorBg);
+  color: var(--botColorText);
+}
+.stac--panel .stac--messages > .stac--message.stac--remove {
+  transform: translateX(150%);
+  z-index: -1;
+}
+.stac--panel .stac--messages > .stac--message .stac--content {
+  line-height: 1.5em;
+}
+.stac--panel .stac--messages > .stac--message .stac--content p:last-child {
+  margin-bottom: 0;
+}
+.stac--panel .stac--messages > .stac--message .stac--content pre {
+  margin: 0;
+  font-size: smaller;
+}
+.stac--avatar {
+  position: absolute;
+  top: -1.4em;
+  left: 0;
+  height: 2.75em;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 50%;
+}
+.stac--avatarImg {
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+}
+.stac--details {
+  background-color: rgba(120, 120, 120, 0.5);
+  border-bottom: 1px solid black;
+  margin: 0 -10px 0 calc(1.25em - 10px);
+  border-radius: 10px 10px 0 0;
+  padding: 0 10px 0 calc(9.5px + 1.25em);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.stac--user .stac--details {
+  margin-left: -10px;
+  padding-left: 10px;
+}
+.stac--date {
+  font-size: 0.75em;
+  opacity: 0.5;
+}
+.stac--actions {
+  font-size: 0.75em;
+  display: flex;
+  gap: 0.5em;
+}
+.stac--info {
+  margin: 0 -0.5em;
+  opacity: 0.5;
+}
+.stac--action {
+  aspect-ratio: 1 / 1;
+  text-align: center;
+  height: calc(4px + 1.2lh);
+  padding: 2px;
+  opacity: 0.5;
+  transition: 200ms;
+  cursor: pointer;
+}
+.stac--action:hover {
+  opacity: 1;
+}
+.stac--form {
+  flex: 0 0 auto;
+  margin-right: 2.25rem;
+}
+.stac--input {
+  min-height: calc(3lh + 6px);
+  max-height: 50dvh;
+  overflow: auto;
+}
+.stac--input:empty::before {
+  content: 'Ask questions';
+  color: #646464;
+}
+.stac--input:focus:empty::before {
+  content: '';
+}
