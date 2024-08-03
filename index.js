@@ -183,7 +183,7 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                     swipeRight.classList.add('stac--action');
                     swipeRight.classList.add('stac--swipeRight');
                     swipeRight.classList.add('fa-solid', 'fa-chevron-right');
-                    swipeRight.title = 'Show or generate next swipe\n---\nno effect on user messages, gen only works on final bot message';
+                    swipeRight.title = 'Show or generate next swipe\n---\nonly works on user messages (=edit new) and on final bot message (=gen new)';
                     swipeRight.addEventListener('click', async()=>{
                         if (mes.swipe_id + 1 >= (mes.swipes ?? [1]).length) {
                             if (mes.is_user) {
@@ -222,7 +222,7 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                 const edit = document.createElement('div'); {
                     edit.classList.add('stac--action');
                     edit.classList.add('fa-solid', 'fa-pencil');
-                    edit.title = 'Edit message\n---\nNOT IMPLEMENTED';
+                    edit.title = 'Edit message';
                     let isEditing = false;
                     /**@type {HTMLElement} */
                     let editor;
