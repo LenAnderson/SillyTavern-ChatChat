@@ -121,6 +121,39 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                     });
                     actions.append(del);
                 }
+                const copy = document.createElement('div'); {
+                    copy.classList.add('stac--action');
+                    copy.classList.add('fa-solid', 'fa-copy');
+                    copy.title = 'Copy message text';
+                    copy.addEventListener('click', async()=>{
+                        let ok = false;
+                        try {
+                            navigator.clipboard.writeText(mes.mes.toString());
+                            ok = true;
+                        } catch {
+                            console.warn('/copy cannot use clipboard API, falling back to execCommand');
+                            const ta = document.createElement('textarea'); {
+                                ta.value = mes.mes.toString();
+                                ta.style.position = 'fixed';
+                                ta.style.inset = '0';
+                                document.body.append(ta);
+                                ta.focus();
+                                ta.select();
+                                try {
+                                    document.execCommand('copy');
+                                    ok = true;
+                                } catch (err) {
+                                    console.error('Unable to copy to clipboard', err);
+                                }
+                                ta.remove();
+                            }
+                        }
+                        copy.classList.add(`stac--${ok ? 'success' : 'failure'}`);
+                        await delay(1000);
+                        copy.classList.remove(`stac--${ok ? 'success' : 'failure'}`);
+                    });
+                    actions.append(copy);
+                }
                 const swipeLeft = document.createElement('div'); {
                     swipeLeft.classList.add('stac--action');
                     swipeLeft.classList.add('stac--swipeLeft');

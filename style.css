@@ -139,6 +139,14 @@
 .stac--action:hover {
   opacity: 1;
 }
+.stac--action.stac--success {
+  background-color: #51a351;
+  opacity: 1;
+}
+.stac--action.stac--failure {
+  background-color: #bd362f;
+  opacity: 1;
+}
 .stac--form {
   flex: 0 0 auto;
   margin-right: 2.25rem;
