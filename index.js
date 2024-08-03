@@ -550,6 +550,6 @@ const init = async()=>{
     panel.style.setProperty('--botColorBg', settings.botColorBg.toString());
     panel.style.setProperty('--botColorText', settings.botColorText.toString());
     onChatChanged();
-    eventSource.on(event_types.CHAT_CHANGED, ()=>onChatChanged());
+    eventSource.on(event_types.CHAT_CHANGED, ()=>(onChatChanged(), null));
 };
 eventSource.on(event_types.APP_READY, ()=>init());
