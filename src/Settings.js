@@ -1,6 +1,7 @@
 import { characters, chat_metadata, MAX_INJECTION_DEPTH, saveSettingsDebounced } from '../../../../../script.js';
 import { extension_settings, saveMetadataDebounced } from '../../../../extensions.js';
 import { delay } from '../../../../utils.js';
+import { initMetadata } from '../index.js';
 import { BaseSetting } from './settings/BaseSetting.js';
 import { CheckboxSetting } from './settings/CheckboxSetting.js';
 import { ColorSetting } from './settings/ColorSetting.js';
@@ -282,9 +283,7 @@ export class Settings {
         };
         saveSettingsDebounced();
         if (chat_metadata) {
-            if (!chat_metadata.chatchat) {
-                chat_metadata.chatchat = { history:[], settings:{} };
-            }
+            initMetadata();
             chat_metadata.chatchat.settings = {
                 scriptBefore: this.scriptBefore,
                 scriptAfter: this.scriptAfter,
@@ -443,11 +442,11 @@ export class Settings {
         this.dom?.classList?.remove('stac--active');
         this.dom?.remove();
     }
-    async toggle(parent) {
-        if (this.isActive) {
-            this.hide();
-        } else {
-            await this.show(parent);
-        }
-    }
+    // async toggle(parent) {
+    //     if (this.isActive) {
+    //         this.hide();
+    //     } else {
+    //         await this.show(parent);
+    //     }
+    // }
 }

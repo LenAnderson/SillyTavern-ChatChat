@@ -1,8 +1,10 @@
-import { characters, chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, messageFormatting, saveChatConditional, sendMessageAsUser, setCharacterId, setExtensionPrompt, system_message_types, this_chid } from '../../../../script.js';
+import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, messageFormatting, saveChatConditional, sendMessageAsUser, setExtensionPrompt, system_message_types } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
 import { delay } from '../../../utils.js';
 import { getRegexedString, regex_placement } from '../../regex/engine.js';
+import { Chat } from './src/Chat.js';
+import { waitForFrame } from './src/lib/wait.js';
 import { Settings, STORY_POSITION, WIDTH_TYPE } from './src/Settings.js';
 
 
@@ -52,19 +54,35 @@ function isRole(mes, roles) {
 
 
 
-let history = [];
+const chatList = [new Chat()];
+let chatIndex = 0;
+let currentChat = chatList[0];
 const dom = {
     /**@type {HTMLElement} */
     messages: undefined,
     /**@type {HTMLElement} */
     input: undefined,
 };
+export const initMetadata = ()=>{
+    if (!chat_metadata.chatchat) chat_metadata.chatchat = {};
+    if (!chat_metadata.chatchat.settings) chat_metadata.chatchat.settings = {};
+    if (!chat_metadata.chatchat.chatList) {
+        chat_metadata.chatchat.chatList = [new Chat()];
+        chat_metadata.chatchat.chatIndex = 0;
+        if (chat_metadata.chatchat.history) {
+            chat_metadata.chatchat.chatList[0].messageList = chat_metadata.chatchat.history;
+        }
+    } else if (!chat_metadata.chatchat.chatIndex) {
+        chat_metadata.chatchat.chatIndex = 0;
+    }
+    chat_metadata.chatchat.chatList.forEach((it,idx)=>{
+        if (!(it instanceof Chat)) chat_metadata.chatchat.chatList[idx] = Chat.from(it);
+    });
+};
 const save = ()=>{
-    if (!chat_metadata.chatchat) chat_metadata.chatchat = {
-        settings: {},
-        history: [],
-    };
-    chat_metadata.chatchat.history = history;
+    initMetadata();
+    chat_metadata.chatchat.chatList[chatIndex] = currentChat;
+    chat_metadata.chatchat.chatIndex = chatIndex;
     saveMetadataDebounced();
 };
 const onChatChanged = async()=>{
@@ -72,11 +90,18 @@ const onChatChanged = async()=>{
     settings.load();
     settings.registerSettings();
     await settings.init();
-    history = chat_metadata.chatchat?.history ?? [];
+    initMetadata();
+    while(chatList.pop());
+    chatList.push(...chat_metadata.chatchat.chatList);
+    chatIndex = chat_metadata.chatchat.chatIndex;
+    currentChat = chatList[chatIndex];
+    reloadChat();
+};
+const reloadChat = async()=>{
     dom.messages.innerHTML = '';
-    for (const mes of history) {
+    for (const mes of currentChat.messageList) {
         makeMessage(mes, ()=>{
-            history.splice(history.indexOf(mes), 1);
+            currentChat.messageList.splice(currentChat.messageList.indexOf(mes), 1);
             save();
         });
     }
@@ -199,7 +224,7 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                                 swipe.textContent = `${(mes.swipe_id ?? 0) + 1} / ${(mes.swipes?.length ?? 1)}`;
                                 dt.textContent = mes.send_date;
                                 edit.click();
-                            } else if (history.indexOf(mes) + 1 < history.length) {
+                            } else if (currentChat.messageList.indexOf(mes) + 1 < currentChat.messageList.length) {
                                 //TODO add swipe and open editor? gen in middle? create branch?
                             } else {
                                 await swipeGen();
@@ -297,11 +322,11 @@ const addSwipe = (mes, newMes)=>{
     mes.send_date = newMes.send_date;
 };
 const swipeGen = async()=>{
-    const usedHistory = structuredClone(history);
-    const oBotMes = history.slice(-1).pop();
+    const usedHistory = structuredClone(currentChat.messageList);
+    const oBotMes = currentChat.messageList.slice(-1).pop();
     usedHistory.pop();
     if (oBotMes.is_user) return;
-    const oUserMes = history.slice(-2, -1).pop();
+    const oUserMes = currentChat.messageList.slice(-2, -1).pop();
     if (!oUserMes.is_user) return;
     const text = oUserMes.mes;
     [...dom.messages.children][0].remove();
@@ -309,17 +334,17 @@ const swipeGen = async()=>{
     addSwipe(oBotMes, botMes);
     makeMessage(oBotMes, ()=>{
         if (!oBotMes) return;
-        history.splice(history.indexOf(oBotMes), 1);
+        currentChat.messageList.splice(currentChat.messageList.indexOf(oBotMes), 1);
         save();
     }, -1);
     save();
 };
 const send = async(text)=>{
     text = text.trim();
-    const usedHistory = structuredClone(history);
+    const usedHistory = structuredClone(currentChat.messageList);
     let hasUserMes = true;
     if (text.length == 0) {
-        if (history.length == 0) return;
+        if (currentChat.messageList.length == 0) return;
         const userMes = usedHistory.pop();
         if (!userMes.is_user) return;
         hasUserMes = false;
@@ -327,17 +352,17 @@ const send = async(text)=>{
     }
     const { userMes, botMes } = await gen(usedHistory, text, hasUserMes);
     if (hasUserMes) {
-        history.push(userMes);
+        currentChat.messageList.push(userMes);
         makeMessage(userMes, ()=>{
             if (!userMes) return;
-            history.splice(history.indexOf(userMes), 1);
+            currentChat.messageList.splice(currentChat.messageList.indexOf(userMes), 1);
             save();
         }, -2);
     }
-    history.push(botMes);
+    currentChat.messageList.push(botMes);
     makeMessage(botMes, ()=>{
         if (!botMes) return;
-        history.splice(history.indexOf(botMes), 1);
+        currentChat.messageList.splice(currentChat.messageList.indexOf(botMes), 1);
         save();
     }, -1);
     save();
@@ -478,7 +503,7 @@ const init = async()=>{
     const trigger = document.createElement('div'); {
         trigger.classList.add('stac--trigger');
         trigger.classList.add('fa', 'fa-solid', 'fa-comment-alt');
-        trigger.title = 'Click to toggle ChatChat\nRight-click to open settings';
+        trigger.title = 'Click to toggle ChatChat\nRight-click for settings and chat management';
         trigger.addEventListener('click', ()=>{
             if (panel.classList.toggle('stac--active')) {
                 dom.input.focus();
@@ -486,13 +511,129 @@ const init = async()=>{
                 dom.input.blur();
             }
         });
+        let menu;
+        const hide = async()=>{
+            menu.classList.remove('stac--active');
+            await delay(410);
+            menu.remove();
+            menu = null;
+            trigger.classList.remove('stac--hasMenu');
+        };
         trigger.addEventListener('contextmenu', async(evt)=>{
             evt.preventDefault();
-            settings.hide();
-            settings.load();
-            settings.registerSettings();
-            await settings.init();
-            settings.show();
+            if (menu) return hide();
+            trigger.classList.add('stac--hasMenu');
+            menu = document.createElement('div'); {
+                menu.classList.add('stac--menu');
+                const settingsItem = document.createElement('div'); {
+                    settingsItem.classList.add('stac--item');
+                    settingsItem.classList.add('stac--settings');
+                    const icon = document.createElement('div'); {
+                        icon.classList.add('stac--icon');
+                        icon.classList.add('fa-solid', 'fa-cog');
+                        settingsItem.append(icon);
+                    }
+                    const label = document.createElement('div'); {
+                        label.classList.add('stac--label');
+                        label.textContent = 'Settings';
+                        settingsItem.append(label);
+                    }
+                    settingsItem.addEventListener('click', async()=>{
+                        hide();
+                        settings.hide();
+                        settings.load();
+                        settings.registerSettings();
+                        await settings.init();
+                        settings.show();
+                    });
+                    menu.append(settingsItem);
+                }
+                const delChat = document.createElement('div'); {
+                    delChat.classList.add('stac--item');
+                    delChat.classList.add('stac--delChat');
+                    const icon = document.createElement('div'); {
+                        icon.classList.add('stac--icon');
+                        icon.classList.add('fa-solid', 'fa-trash-can');
+                        delChat.append(icon);
+                    }
+                    const label = document.createElement('div'); {
+                        label.classList.add('stac--label');
+                        label.textContent = 'Delete current chat';
+                        delChat.append(label);
+                    }
+                    delChat.addEventListener('click', async()=>{
+                        hide();
+                        chatList.splice(chatIndex, 1);
+                        if (chatList.length > chatIndex) {
+                            // keep index, show next chat
+                        } else if (chatList.length > 0) {
+                            // show prev chat
+                            chatIndex--;
+                        } else {
+                            // add new empty chat
+                            const nc = new Chat();
+                            chatList.push(nc);
+                        }
+                        currentChat = chatList[chatIndex];
+                        save();
+                        reloadChat();
+                    });
+                    menu.append(delChat);
+                }
+                const newChat = document.createElement('div'); {
+                    newChat.classList.add('stac--item');
+                    newChat.classList.add('stac--newChat');
+                    const icon = document.createElement('div'); {
+                        icon.classList.add('stac--icon');
+                        icon.classList.add('fa-solid', 'fa-comment-medical');
+                        newChat.append(icon);
+                    }
+                    const label = document.createElement('div'); {
+                        label.classList.add('stac--label');
+                        label.textContent = 'Start new chat';
+                        newChat.append(label);
+                    }
+                    newChat.addEventListener('click', async()=>{
+                        hide();
+                        const nc = new Chat();
+                        chatList.push(nc);
+                        chatIndex++;
+                        currentChat = nc;
+                        save();
+                        reloadChat();
+                    });
+                    menu.append(newChat);
+                }
+                for (const c of chatList.toSorted((a,b)=>b.lastChatOn - a.lastChatOn)) {
+                    const item = document.createElement('div'); {
+                        item.classList.add('stac--item');
+                        item.classList.add('stac--chat');
+                        if (c == currentChat) item.classList.add('stac--current');
+                        const icon = document.createElement('div'); {
+                            icon.classList.add('stac--icon');
+                            icon.classList.add('fa-solid', 'fa-comments');
+                            item.append(icon);
+                        }
+                        const label = document.createElement('div'); {
+                            label.classList.add('stac--label');
+                            label.textContent = `${c.title} (${c.messageList.length}) - ${new Date(c.lastChatOn).toLocaleString()}`;
+                            item.append(label);
+                        }
+                        item.addEventListener('click', async()=>{
+                            hide();
+                            chatList.indexOf(c);
+                            currentChat = c;
+                            save();
+                            reloadChat();
+                        });
+                        menu.append(item);
+                    }
+                }
+                await waitForFrame();
+                document.body.append(menu);
+                await waitForFrame();
+                menu.classList.add('stac--active');
+            }
         });
         document.body.append(trigger);
     }
