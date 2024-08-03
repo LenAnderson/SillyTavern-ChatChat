@@ -299,6 +299,7 @@ const addSwipe = (mes, newMes)=>{
 const swipeGen = async()=>{
     const usedHistory = structuredClone(history);
     const oBotMes = history.slice(-1).pop();
+    usedHistory.pop();
     if (oBotMes.is_user) return;
     const oUserMes = history.slice(-2, -1).pop();
     if (!oUserMes.is_user) return;
