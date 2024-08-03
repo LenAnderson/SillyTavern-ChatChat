@@ -100,13 +100,10 @@ const onChatChanged = async()=>{
 const reloadChat = async()=>{
     dom.messages.innerHTML = '';
     for (const mes of currentChat.messageList) {
-        makeMessage(mes, ()=>{
-            currentChat.messageList.splice(currentChat.messageList.indexOf(mes), 1);
-            save();
-        });
+        makeMessage(mes);
     }
 };
-const makeMessage = (mes, onDelete, replace = null)=>{
+const makeMessage = (mes, replace = null)=>{
     const content = messageFormatting(mes.mes, mes.name, mes.is_system, mes.is_user, -1);
     const isUser = mes.is_user;
     let mesText;
@@ -139,7 +136,8 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                     del.classList.add('fa-solid', 'fa-trash-can');
                     del.title = 'Delete message\n---\nNo warning, no confirm. When it\'s gone it\'s gone...';
                     del.addEventListener('click', async()=>{
-                        onDelete();
+                        currentChat.messageList.splice(currentChat.messageList.indexOf(mes), 1);
+                        save();
                         root.classList.add('stac--remove');
                         await delay(410);
                         root.remove();
@@ -332,11 +330,7 @@ const swipeGen = async()=>{
     [...dom.messages.children][0].remove();
     const { userMes, botMes } = await gen(usedHistory, text, false);
     addSwipe(oBotMes, botMes);
-    makeMessage(oBotMes, ()=>{
-        if (!oBotMes) return;
-        currentChat.messageList.splice(currentChat.messageList.indexOf(oBotMes), 1);
-        save();
-    }, -1);
+    makeMessage(oBotMes, -1);
     save();
 };
 const send = async(text)=>{
@@ -353,18 +347,10 @@ const send = async(text)=>{
     const { userMes, botMes } = await gen(usedHistory, text, hasUserMes);
     if (hasUserMes) {
         currentChat.messageList.push(userMes);
-        makeMessage(userMes, ()=>{
-            if (!userMes) return;
-            currentChat.messageList.splice(currentChat.messageList.indexOf(userMes), 1);
-            save();
-        }, -2);
+        makeMessage(userMes, -2);
     }
     currentChat.messageList.push(botMes);
-    makeMessage(botMes, ()=>{
-        if (!botMes) return;
-        currentChat.messageList.splice(currentChat.messageList.indexOf(botMes), 1);
-        save();
-    }, -1);
+    makeMessage(botMes, -1);
     save();
 };
 
@@ -431,17 +417,10 @@ const gen = async(history, userText, hasUserMes)=>{
     const userMes = structuredClone(chat.slice(-1)[0]);
     history.push(userMes);
     if (hasUserMes) {
-        makeMessage(chat.slice(-1)[0], ()=>{
-            history.splice(history.indexOf(userMes), 1);
-            save();
-        });
+        makeMessage(chat.slice(-1)[0]);
     }
     let botMes;
-    let botContent = makeMessage({ mes:'...', is_user:false, send_date:'' }, ()=>{
-        if (!botMes) return;
-        history.splice(history.indexOf(botMes), 1);
-        save();
-    });
+    let botContent = makeMessage({ mes:'...', is_user:false, send_date:'' });
     const idx = chat.length;
     let isDone = false;
     const prom = Generate('normal').then(()=>isDone = true);
