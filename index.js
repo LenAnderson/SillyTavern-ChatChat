@@ -407,7 +407,7 @@ const init = async()=>{
         trigger.title = 'Click to toggle ChatChat\nRight-click to open settings';
         trigger.addEventListener('click', ()=>{
             if (panel.classList.toggle('stac--active')) {
-                dom.input.select();
+                dom.input.focus();
             } else {
                 dom.input.blur();
             }
@@ -461,7 +461,7 @@ const init = async()=>{
                     const text = dom.input.textContent;
                     dom.input.textContent = '';
                     await send(text);
-                    dom.input.select();
+                    dom.input.focus();
                 });
                 form.append(inp);
             }
