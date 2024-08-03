@@ -212,6 +212,31 @@ const makeMessage = (mes, onDelete, replace = null)=>{
                     edit.classList.add('stac--action');
                     edit.classList.add('fa-solid', 'fa-pencil');
                     edit.title = 'Edit message\n---\nNOT IMPLEMENTED';
+                    let isEditing = false;
+                    /**@type {HTMLElement} */
+                    let editor;
+                    edit.addEventListener('click', ()=>{
+                        if (!isEditing) {
+                            isEditing = true;
+                            editor = document.createElement('div'); {
+                                editor.classList.add('stac--editor');
+                                editor.classList.add('stac--content');
+                                editor.classList.add('mes_text');
+                                editor.contentEditable = 'plaintext-only';
+                                editor.textContent = mes.mes;
+                                editor.addEventListener('keydown', (evt)=>evt.stopPropagation());
+                                txt.replaceWith(editor);
+                                editor.focus();
+                            }
+                        } else {
+                            mes.mes = editor.textContent;
+                            txt.innerHTML = messageFormatting(mes.mes, mes.name, mes.is_system, mes.is_user, -1);
+                            editor.replaceWith(txt);
+                            editor = null;
+                            save();
+                            isEditing = false;
+                        }
+                    });
                     actions.append(edit);
                 }
                 details.append(actions);

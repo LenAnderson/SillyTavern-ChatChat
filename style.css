@@ -8,6 +8,7 @@
   transition: 200ms;
   cursor: pointer;
   z-index: 3010;
+  filter: drop-shadow(2px 4px 6px black);
 }
 .stac--trigger:hover {
   opacity: 1;
@@ -77,6 +78,9 @@
 }
 .stac--panel .stac--messages > .stac--message .stac--content {
   line-height: 1.5em;
+}
+.stac--panel .stac--messages > .stac--message .stac--content.stac--editor {
+  line-height: calc(1.5em + 1px);
 }
 .stac--panel .stac--messages > .stac--message .stac--content p:last-child {
   margin-bottom: 0;

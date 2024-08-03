@@ -11,6 +11,7 @@
 	transition: 200ms;
 	cursor: pointer;
 	z-index: 3010;
+	filter: drop-shadow(2px 4px 6px black);
 	&:hover {
 		opacity: 1;
 	}
@@ -82,6 +83,9 @@
 			}
 			.stac--content {
 				line-height: 1.5em;
+				&.stac--editor {
+					line-height: calc(1.5em + 1px);
+				}
 				p:last-child {
 					margin-bottom: 0;
 				}
