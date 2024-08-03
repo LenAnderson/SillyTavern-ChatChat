@@ -431,6 +431,7 @@ const gen = async(history, userText, hasUserMes)=>{
         await delay(100);
     }
     await prom;
+    mo.disconnect();
     botMes = structuredClone(chat.slice(-1)[0]);
     makeMessage(botMes, ()=>{
         if (!botMes) return;
