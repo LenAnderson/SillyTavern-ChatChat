@@ -506,6 +506,8 @@ const init = async()=>{
                             currentChat = c;
                             save();
                             reloadChat();
+                            panel.classList.add('stac--active');
+                            dom.input.focus();
                         });
                         menu.append(item);
                     }
