@@ -598,7 +598,7 @@ const init = async()=>{
                         }
                         item.addEventListener('click', async()=>{
                             hide();
-                            chatList.indexOf(c);
+                            chatIndex = chatList.indexOf(c);
                             currentChat = c;
                             save();
                             reloadChat();
