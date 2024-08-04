@@ -2,6 +2,8 @@ import { characters, chat_metadata, MAX_INJECTION_DEPTH, saveSettingsDebounced }
 import { extension_settings, saveMetadataDebounced } from '../../../../extensions.js';
 import { delay } from '../../../../utils.js';
 import { initMetadata } from '../index.js';
+import { Message } from './Message.js';
+// eslint-disable-next-line no-unused-vars
 import { BaseSetting } from './settings/BaseSetting.js';
 import { CheckboxSetting } from './settings/CheckboxSetting.js';
 import { ColorSetting } from './settings/ColorSetting.js';
@@ -39,7 +41,7 @@ export class Settings {
     /**@type {string} */ scriptBefore = '';
     /**@type {string} */ scriptAfter = '';
     /**@type {object[]} */ injectList = [];
-    /**@type {STORY_POSITION} */ storyPosition = STORY_POSITION.IN_CHAT;
+    /**@type {STORY_POSITION} */ storyPosition = STORY_POSITION.BEFORE_CHAT;
     /**@type {number} */ storyDepth = 1;
     /**@type {string} */ character;
 
@@ -257,13 +259,15 @@ export class Settings {
                     this.save();
                 },
             }));
+            Message.defaultCharacter = this.character ?? characters[0]?.avatar;
             this.settingList.push(SelectSetting.fromProps({ id: 'stac--character',
                 name: 'Character',
                 description: 'The character you want to chat with.<br><small>No effect apart from changing the avatar (not persistent)</small>',
                 category: ['Chat', 'Character'],
-                initialValue: this.character,
+                initialValue: this.character ?? characters[0]?.avatar,
                 optionList: characters.map(it=>({ value:it.avatar, label:it.name })),
                 onChange: (it)=>{
+                    Message.defaultCharacter = it.value;
                     this.character = it.value;
                     this.save();
                 },
@@ -427,7 +431,7 @@ export class Settings {
                 if (evt.ctrlKey && evt.key == 'f') {
                     evt.preventDefault();
                     evt.stopPropagation();
-                    this.dom.querySelector('.search').select();
+                    /**@type {HTMLInputElement}*/(this.dom.querySelector('.search')).select();
                 }
             });
         }
@@ -436,7 +440,7 @@ export class Settings {
         // this.dom.style.bottom = `calc(100dvh + 50px - ${document.querySelector('#form_sheld').getBoundingClientRect().top}px`;
         await delay(200);
         this.updateCategory();
-        this.dom.querySelector('.search').select();
+        /**@type {HTMLInputElement}*/(this.dom.querySelector('.search')).select();
     }
     hide() {
         this.dom?.classList?.remove('stac--active');

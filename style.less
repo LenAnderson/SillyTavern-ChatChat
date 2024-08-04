@@ -8,7 +8,7 @@
 	right: 0.25em;
 	font-size: 2em;
 	opacity: 0.25;
-	transition: 200ms;
+	transition: opacity 200ms;
 	cursor: pointer;
 	z-index: 3010;
 	filter: drop-shadow(2px 4px 6px black);
@@ -23,7 +23,8 @@
 .stac--menu {
 	filter: drop-shadow(1px 1px 2px var(--black50a));
     z-index: 30000;
-    overflow: hidden;
+    overflow-x: clip;
+	overflow-y: auto;
     border-radius: 10px;
     aspect-ratio: unset;
     padding: 5px 5px 2em 5px;
@@ -35,10 +36,11 @@
 	position: absolute;
     bottom: 0;
     right: 0;
-    max-height: calc(100dvh - 5px);
+    max-height: calc(50dvh);
     max-width: unset;
     width: calc((100vw - var(--sheldWidth)) / 2);
-    transition: calc(1ms * var(--stcdx--transitionTime));
+    // transition: calc(1ms * var(--stcdx--transitionTime));
+	transition: 200ms;
 	transform-origin: calc(100% - 1em) calc(100% - 1em);
 	scale: 0;
 	&.stac--active {
@@ -46,18 +48,24 @@
 	}
 
 	.stac--item {
-		padding: 0.25em 1em;
+		padding: 0.25em 1em 0.25em 0.25em;
 		opacity: 0.5;
+		background-color: rgb(255 255 255 / 0);
 		cursor: pointer;
 		transition: 200ms;
 		display: flex;
 		gap: 0.5em;
 		align-items: baseline;
-		&:hover {
+		transform: translateX(0);
+		&:hover, &.stac--chat:not(.stac--current):hover, &:has([contenteditable]) {
 			opacity: 1;
+			background-color: rgb(255 255 255 / 0.0625);
 		}
 		&.stac--current {
 			font-weight: bold;
+		}
+		&.stac--remove {
+			transform: translateX(150%);
 		}
 		.stac--icon {
 			flex: 0 0 auto;
@@ -66,6 +74,34 @@
 		}
 		.stac--label {
 			flex: 1 1 auto;
+		}
+
+		&.stac--chat {
+			&:not(.stac--current) { opacity: 0.25; }
+			.stac--label {
+				display: flex;
+			}
+
+			.stac--content {
+				flex: 1 1 auto;
+			}
+
+			.stac--meta {
+				font-weight: normal;
+				font-size: smaller;
+				opacity: 0.5;
+				display: flex;
+				gap: 1em;
+			}
+			.stac--icon {
+				margin-right: 0.25em;
+			}
+
+			.stac--actions {
+				flex: 0 0 auto;
+				display: flex;
+				gap: 0.5em;
+			}
 		}
 	}
 }
@@ -95,7 +131,8 @@
 	position: absolute;
     bottom: 0;
     right: 0;
-    max-height: calc(100dvh - 5px);
+	top: 0;
+    // max-height: calc(100dvh - 5px);
     max-width: unset;
     width: calc((100vw - var(--sheldWidth)) / 2);
 	&.stac--unlocked {
@@ -115,6 +152,7 @@
 		flex-direction: column-reverse;
 		overflow-x: clip;
 		overflow-y: auto;
+		// padding-top: 1.5em;
 		> .stac--message {
 			padding: 0 10px;
 			width: auto;
@@ -136,6 +174,7 @@
 			}
 			.stac--content {
 				line-height: 1.5em;
+				padding: 0;
 				&.stac--editor {
 					line-height: calc(1.5em + 1px);
 				}
@@ -164,7 +203,7 @@
 	height: 100%;
 	aspect-ratio: 1 / 1;
 	object-fit: cover;
-	object-position: center;
+	object-position: top center;
 }
 
 .stac--details {
@@ -180,38 +219,38 @@
 		margin-left: -10px;
 		padding-left: 10px;
 	}
-}
-.stac--date {
-	font-size: 0.75em;
-	opacity: 0.5;
-}
-.stac--actions {
-	font-size: 0.75em;
-	display: flex;
-	gap: 0.5em;
-}
-.stac--info {
-	margin: 0 -0.5em;
-	opacity: 0.5;
-}
-.stac--action {
-	aspect-ratio: 1 / 1;
-    text-align: center;
-    height: calc(4px + 1.2lh);
-    padding: 2px;
-    opacity: 0.5;
-    transition: 200ms;
-	cursor: pointer;
-	&:hover {
-		opacity: 1;
+	.stac--date {
+		font-size: 0.75em;
+		opacity: 0.5;
 	}
-	&.stac--success {
-		background-color: rgb(81, 163, 81);
-		opacity: 1;
+	.stac--actions {
+		font-size: 0.75em;
+		display: flex;
+		gap: 0.5em;
 	}
-	&.stac--failure {
-		background-color: rgb(189, 54, 47);
-		opacity: 1;
+	.stac--info {
+		margin: 0 -0.5em;
+		opacity: 0.5;
+	}
+	.stac--action {
+		aspect-ratio: 1 / 1;
+		text-align: center;
+		height: calc(4px + 1.2lh);
+		padding: 2px;
+		opacity: 0.5;
+		transition: 200ms;
+		cursor: pointer;
+		&:hover {
+			opacity: 1;
+		}
+		&.stac--success {
+			background-color: rgb(81, 163, 81);
+			opacity: 1;
+		}
+		&.stac--failure {
+			background-color: rgb(189, 54, 47);
+			opacity: 1;
+		}
 	}
 }
 
