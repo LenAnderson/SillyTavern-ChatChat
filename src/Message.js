@@ -369,7 +369,7 @@ export class Message {
                             swipeRight.classList.add('stac--action');
                             swipeRight.classList.add('stac--swipeRight');
                             swipeRight.classList.add('fa-solid', 'fa-chevron-right');
-                            swipeRight.title = 'Show or generate next swipe\n---\nonly works on user messages (=edit new) and on final bot message (=gen new)';
+                            swipeRight.title = 'Show or generate / write next swipe';
                             swipeRight.addEventListener('click', async()=>{
                                 if (this.swipeIndex + 1 < this.swipeList.length) {
                                     // more existing swipes to the right
