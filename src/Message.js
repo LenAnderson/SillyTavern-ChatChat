@@ -462,6 +462,6 @@ export class Message {
         if (oldProps && oldProps.send_date != this.sendDate) this.dom.date.textContent = this.sendDate;
         if (oldProps && oldProps.mes != this.text) this.dom.content.innerHTML = this.messageFormatting();
         this.dom.swipes.textContent = `${this.swipeIndex + 1} / ${(this.swipeList.length)}`;
-        this.dom.avatar.src = `/thumbnail?type=avatar&file=${this.character ?? Message.defaultCharacter}`;
+        if (this.dom.avatar) this.dom.avatar.src = `/thumbnail?type=avatar&file=${this.character ?? Message.defaultCharacter}`;
     }
 }
