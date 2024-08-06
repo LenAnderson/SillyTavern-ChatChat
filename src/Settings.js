@@ -32,8 +32,12 @@ export class Settings {
     /**@type {number} */ width = 0.5;
     /**@type {string} */ userColorBg = 'rgba(120, 120, 120, 0.75)';
     /**@type {string} */ userColorText = 'rgba(255, 255, 255, 1)';
+    /**@type {string} */ userColorBgHeader = 'rgba(120, 120, 120, 0.5)';
+    /**@type {string} */ userColorTextHeader = 'rgba(255, 255, 255, 1)';
     /**@type {string} */ botColorBg = 'rgba(0, 0, 255, 0.75)';
     /**@type {string} */ botColorText = 'rgba(255, 255, 255, 1)';
+    /**@type {string} */ botColorBgHeader = 'rgba(120, 120, 120, 0.5)';
+    /**@type {string} */ botColorTextHeader = 'rgba(255, 255, 255, 1)';
     /**@type {string} */ inputColorBg = 'rgba(0, 0, 0, 0.3)';
     /**@type {string} */ inputColorText = 'rgba(255, 255, 255, 1)';
 
@@ -68,8 +72,12 @@ export class Settings {
             width: this.width,
             userColorBg: this.userColorBg,
             userColorText: this.userColorText,
+            userColorBgHeader: this.userColorBgHeader,
+            userColorTextHeader: this.userColorTextHeader,
             botColorBg: this.botColorBg,
             botColorText: this.botColorText,
+            botColorBgHeader: this.botColorBgHeader,
+            botColorTextHeader: this.botColorTextHeader,
 
             scriptBefore: this.scriptBefore,
             scriptAfter: this.scriptAfter,
@@ -153,6 +161,28 @@ export class Settings {
                         this.save();
                     },
                 }));
+                this.settingList.push(ColorSetting.fromProps({ id: 'stac--userColorBgHeader',
+                    name: 'User Message Header Background Color',
+                    description: 'Background color for the headers on user message bubbles.',
+                    category: ['Global', 'Colors'],
+                    initialValue: this.userColorBgHeader,
+                    onChange: (it)=>{
+                        this.userColorBgHeader = it.value;
+                        /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--userColorBgHeader', this.userColorBgHeader.toString());
+                        this.save();
+                    },
+                }));
+                this.settingList.push(ColorSetting.fromProps({ id: 'stac--userColorTextHeader',
+                    name: 'User Message Header Text Color',
+                    description: 'Text color for the headers on user message bubbles.',
+                    category: ['Global', 'Colors'],
+                    initialValue: this.userColorTextHeader,
+                    onChange: (it)=>{
+                        this.userColorTextHeader = it.value;
+                        /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--userColorTextHeader', this.userColorTextHeader.toString());
+                        this.save();
+                    },
+                }));
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorBg',
                     name: 'Bot Message Background Color',
                     description: 'Background color for the bot message bubbles.',
@@ -172,6 +202,28 @@ export class Settings {
                     onChange: (it)=>{
                         this.botColorText = it.value;
                         /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--botColorText', this.botColorText.toString());
+                        this.save();
+                    },
+                }));
+                this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorBgHeader',
+                    name: 'Bot Message Header Background Color',
+                    description: 'Background color for the headers on bot message bubbles.',
+                    category: ['Global', 'Colors'],
+                    initialValue: this.botColorBgHeader,
+                    onChange: (it)=>{
+                        this.botColorBgHeader = it.value;
+                        /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--botColorBgHeader', this.botColorBgHeader.toString());
+                        this.save();
+                    },
+                }));
+                this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorTextHeader',
+                    name: 'Bot Message Header Text Color',
+                    description: 'Text color for the headers on bot message bubbles.',
+                    category: ['Global', 'Colors'],
+                    initialValue: this.botColorTextHeader,
+                    onChange: (it)=>{
+                        this.botColorTextHeader = it.value;
+                        /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--botColorTextHeader', this.botColorTextHeader.toString());
                         this.save();
                     },
                 }));
@@ -282,8 +334,10 @@ export class Settings {
             width: this.width,
             userColorBg: this.userColorBg,
             userColorText: this.userColorText,
-            botColorBg: this.botColorBg,
-            botColorText: this.botColorText,
+            userColorBgHeader: this.userColorBgHeader,
+            userColorTextHeader: this.userColorTextHeader,
+            botColorBgHeader: this.botColorBgHeader,
+            botColorTextHeader: this.botColorTextHeader,
         };
         saveSettingsDebounced();
         if (chat_metadata) {

@@ -573,8 +573,10 @@ const init = async()=>{
     panel.style.setProperty('--width', settings.width.toString());
     panel.style.setProperty('--userColorBg', settings.userColorBg.toString());
     panel.style.setProperty('--userColorText', settings.userColorText.toString());
-    panel.style.setProperty('--botColorBg', settings.botColorBg.toString());
-    panel.style.setProperty('--botColorText', settings.botColorText.toString());
+    panel.style.setProperty('--userColorBgHeader', settings.userColorBgHeader.toString());
+    panel.style.setProperty('--userColorTextHeader', settings.userColorTextHeader.toString());
+    panel.style.setProperty('--botColorBgHeader', settings.botColorBgHeader.toString());
+    panel.style.setProperty('--botColorTextHeader', settings.botColorTextHeader.toString());
     onChatChanged();
     eventSource.on(event_types.CHAT_CHANGED, ()=>(onChatChanged(), null));
 };

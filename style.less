@@ -111,8 +111,12 @@
 	--width: 0.5;
 	--userColorBg: rgb(120 120 120 / 0.75);
 	--userColorText: rgb(255 255 255);
+	--userColorBgHeader: rgb(120 120 120 / 0.5);
+	--userColorTextHeader: rgb(255 255 255);
 	--botColorBg: rgb(0 0 255 / 0.75);
 	--botColorText: rgb(255 255 255);
+	--botColorBgHeader: rgb(0 0 255 / 0.5);
+	--botColorTextHeader: rgb(255 255 255);
 	--inputColorBg: rgb(0 0 0 / 0.3);
 	--inputColorText: rgb(255 255 255);
 
@@ -207,15 +211,19 @@
 }
 
 .stac--details {
-	background-color: rgba(120, 120, 120, 0.5);
-    border-bottom: 1px solid black;
-    margin: 0 -10px 0 calc(1.25em - 10px);
-    border-radius: 10px 10px 0 0;
-    padding: 0 10px 0 calc(9.5px + 1.25em);
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+
+	background-color: var(--botColorBgHeader);
+    border-bottom: 1px solid black;
+    border-radius: 10px 10px 0 0;
+	color: var(--botColorTextHeader);
+    margin: 0 -10px 0 calc(1.25em - 10px);
+    padding: 0 10px 0 calc(9.5px + 1.25em);
 	.stac--user & {
+		background-color: var(--userColorBgHeader);
+		color: var(--userColorTextHeader);
 		margin-left: -10px;
 		padding-left: 10px;
 	}

@@ -101,8 +101,12 @@
   --width: 0.5;
   --userColorBg: rgba(120, 120, 120, 0.75);
   --userColorText: #ffffff;
+  --userColorBgHeader: rgba(120, 120, 120, 0.5);
+  --userColorTextHeader: #ffffff;
   --botColorBg: rgba(0, 0, 255, 0.75);
   --botColorText: #ffffff;
+  --botColorBgHeader: rgba(0, 0, 255, 0.5);
+  --botColorTextHeader: #ffffff;
   --inputColorBg: rgba(0, 0, 0, 0.3);
   --inputColorText: #ffffff;
   font-size: calc(1em * var(--fontSize));
@@ -189,16 +193,19 @@
   object-position: top center;
 }
 .stac--details {
-  background-color: rgba(120, 120, 120, 0.5);
-  border-bottom: 1px solid black;
-  margin: 0 -10px 0 calc(1.25em - 10px);
-  border-radius: 10px 10px 0 0;
-  padding: 0 10px 0 calc(9.5px + 1.25em);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: var(--botColorBgHeader);
+  border-bottom: 1px solid black;
+  border-radius: 10px 10px 0 0;
+  color: var(--botColorTextHeader);
+  margin: 0 -10px 0 calc(1.25em - 10px);
+  padding: 0 10px 0 calc(9.5px + 1.25em);
 }
 .stac--user .stac--details {
+  background-color: var(--userColorBgHeader);
+  color: var(--userColorTextHeader);
   margin-left: -10px;
   padding-left: 10px;
 }
