@@ -142,7 +142,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--userColorBg',
                     name: 'User Message Background Color',
                     description: 'Background color for the user message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'User'],
                     initialValue: this.userColorBg,
                     onChange: (it)=>{
                         this.userColorBg = it.value;
@@ -153,7 +153,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--userColorText',
                     name: 'User Message Text Color',
                     description: 'Text color for the user message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'User'],
                     initialValue: this.userColorText,
                     onChange: (it)=>{
                         this.userColorText = it.value;
@@ -164,7 +164,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--userColorBgHeader',
                     name: 'User Message Header Background Color',
                     description: 'Background color for the headers on user message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'User'],
                     initialValue: this.userColorBgHeader,
                     onChange: (it)=>{
                         this.userColorBgHeader = it.value;
@@ -175,7 +175,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--userColorTextHeader',
                     name: 'User Message Header Text Color',
                     description: 'Text color for the headers on user message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'User'],
                     initialValue: this.userColorTextHeader,
                     onChange: (it)=>{
                         this.userColorTextHeader = it.value;
@@ -186,7 +186,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorBg',
                     name: 'Bot Message Background Color',
                     description: 'Background color for the bot message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'Bot'],
                     initialValue: this.botColorBg,
                     onChange: (it)=>{
                         this.botColorBg = it.value;
@@ -197,7 +197,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorText',
                     name: 'Bot Message Text Color',
                     description: 'Text color for the bot message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'Bot'],
                     initialValue: this.botColorText,
                     onChange: (it)=>{
                         this.botColorText = it.value;
@@ -208,7 +208,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorBgHeader',
                     name: 'Bot Message Header Background Color',
                     description: 'Background color for the headers on bot message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'Bot'],
                     initialValue: this.botColorBgHeader,
                     onChange: (it)=>{
                         this.botColorBgHeader = it.value;
@@ -219,7 +219,7 @@ export class Settings {
                 this.settingList.push(ColorSetting.fromProps({ id: 'stac--botColorTextHeader',
                     name: 'Bot Message Header Text Color',
                     description: 'Text color for the headers on bot message bubbles.',
-                    category: ['Global', 'Colors'],
+                    category: ['Global', 'Colors', 'Bot'],
                     initialValue: this.botColorTextHeader,
                     onChange: (it)=>{
                         this.botColorTextHeader = it.value;
