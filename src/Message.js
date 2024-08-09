@@ -416,7 +416,20 @@ export class Message {
                                         editor.classList.add('mes_text');
                                         editor.contentEditable = 'plaintext-only';
                                         editor.textContent = this.text;
-                                        editor.addEventListener('keydown', (evt)=>evt.stopPropagation());
+                                        editor.addEventListener('keydown', (evt)=>{
+                                            evt.stopPropagation();
+                                            // ctrl+enter to save
+                                            if (evt.ctrlKey && evt.key == 'Enter' && !evt.shiftKey && !evt.altKey) {
+                                                edit.click();
+                                                return;
+                                            }
+                                            // escape to cancel
+                                            if (evt.key == 'Escape' && !evt.ctrlKey && !evt.shiftKey && !evt.altKey) {
+                                                editor.textContent = this.text;
+                                                edit.click();
+                                                return;
+                                            }
+                                        });
                                         txt.replaceWith(editor);
                                         editor.focus();
                                     }
