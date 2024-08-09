@@ -336,6 +336,8 @@ export class Settings {
             userColorText: this.userColorText,
             userColorBgHeader: this.userColorBgHeader,
             userColorTextHeader: this.userColorTextHeader,
+            botColorBg: this.botColorBg,
+            botColorText: this.botColorText,
             botColorBgHeader: this.botColorBgHeader,
             botColorTextHeader: this.botColorTextHeader,
         };
