@@ -45,6 +45,28 @@ export const MESSAGE_TYPE = {
  */
 
 
+/**
+ *
+ * @param {string} mts
+ * @returns {Date}
+ */
+const parseMessageTimeStamp = (mts)=>{
+    // June 19, 2023 2:20pm
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const match = /^(?<month>\w+) (?<date>\d+), (?<year>\d+) (?<hour>\d+):(?<minute>\d+)(?<meridian>\w+)$/.exec(mts)?.groups;
+    // if (!match) return new Date();
+    const dt = new Date();
+    dt.setFullYear(Number(match.year));
+    dt.setMonth(months.indexOf(match.month));
+    dt.setDate(Number(match.date));
+    dt.setHours((Number(match.hour) % 12) + (match.meridian == 'am' ? 0 : 12));
+    dt.setMinutes(Number(match.minute));
+    dt.setSeconds(0);
+    dt.setMilliseconds(0);
+    return dt;
+};
+
+
 
 export class Swipe {
     /**
@@ -138,6 +160,8 @@ export class Message {
 
     /**@type {Swipe[]} */ swipeList = [];
     /**@type {number} */ swipeIndex = -1;
+    /**@type {boolean} */ isEditing = false;
+    /**@type {HTMLElement} */ editor;
 
     /**@type {Swipe} */
     get swipe() { return this.swipeList[this.swipeIndex]; }
@@ -213,6 +237,12 @@ export class Message {
         const swipe = new Swipe();
         swipe.text = text;
         swipe.sendDate = getMessageTimeStamp();
+        if (this.swipe) {
+            swipe.character ??= this.swipe.character;
+            swipe.isSystem ??= this.swipe.isSystem;
+            swipe.isUser ??= this.swipe.isUser;
+            swipe.name ??= this.swipe.name;
+        }
         return this.addSwipe(swipe);
     }
 
@@ -231,9 +261,88 @@ export class Message {
      * @returns {Swipe}
      */
     addSwipe(swipe) {
+        const oldSwipe = this.swipe;
         this.swipeList.push(swipe);
-        this.swipeIndex++;
+        this.swipeIndex = this.swipeList.length - 1;
+        if (oldSwipe) {
+            this.updateRender(oldSwipe.data);
+            this.onSwipe(oldSwipe);
+            this.onChange();
+        }
         return swipe;
+    }
+
+    async goToSwipe(idx) {
+        if (idx >= this.swipeList.length) throw new RangeError(`Swipe index out of range: ${idx} >= ${this.swipeList.length}`);
+        const oldSwipe = this.swipe;
+        this.swipeIndex = idx;
+        this.updateRender(oldSwipe.data);
+        this.onSwipe(oldSwipe);
+        this.onChange();
+    }
+
+    async nextSwipe() {
+        if (this.swipeIndex + 1 < this.swipeList.length) {
+            // more existing swipes to the right
+            const oldSwipe = this.swipe;
+            this.swipeIndex++;
+            this.updateRender(oldSwipe.data);
+            this.onSwipe(oldSwipe);
+            this.onChange();
+        } else {
+            // make new swipe
+            if (this.isUser) {
+                // add empty swipe and open editor
+                const oldSwipe = this.swipe;
+                this.addTextSwipe('');
+                this.swipe.isUser = true;
+                this.updateRender(oldSwipe.data);
+                this.onSwipe(oldSwipe);
+                this.toggleEditor();
+            } else {
+                const oldSwipe = this.swipe;
+                this.addTextSwipe('...');
+                this.updateRender(oldSwipe.data);
+                this.onSwipe(oldSwipe);
+                this.onGenerate();
+            }
+        }
+    }
+
+    toggleEditor() {
+        if (!this.isEditing) {
+            this.isEditing = true;
+            this.editor = document.createElement('div'); {
+                this.editor.classList.add('stac--editor');
+                this.editor.classList.add('stac--content');
+                this.editor.classList.add('mes_text');
+                this.editor.contentEditable = 'plaintext-only';
+                this.editor.textContent = this.text;
+                this.editor.addEventListener('keydown', (evt)=>{
+                    evt.stopPropagation();
+                    // ctrl+enter to save
+                    if (evt.ctrlKey && evt.key == 'Enter' && !evt.shiftKey && !evt.altKey) {
+                        this.toggleEditor();
+                        return;
+                    }
+                    // escape to cancel
+                    if (evt.key == 'Escape' && !evt.ctrlKey && !evt.shiftKey && !evt.altKey) {
+                        this.editor.textContent = this.text;
+                        this.toggleEditor()
+                        return;
+                    }
+                });
+                this.#dom.content.replaceWith(this.editor);
+                this.editor.focus();
+            }
+        } else {
+            this.text = this.editor.textContent;
+            this.#dom.content.innerHTML = this.messageFormatting();
+            this.editor.replaceWith(this.#dom.content);
+            this.editor = null;
+            this.onChange();
+            this.isEditing = false;
+        }
     }
 
     /**
@@ -370,78 +479,14 @@ export class Message {
                             swipeRight.classList.add('stac--swipeRight');
                             swipeRight.classList.add('fa-solid', 'fa-chevron-right');
                             swipeRight.title = 'Show or generate / write next swipe';
-                            swipeRight.addEventListener('click', async()=>{
-                                if (this.swipeIndex + 1 < this.swipeList.length) {
-                                    // more existing swipes to the right
-                                    const oldSwipe = this.swipe;
-                                    this.swipeIndex++;
-                                    this.updateRender(oldSwipe.data);
-                                    this.onSwipe(oldSwipe);
-                                    this.onChange();
-                                } else {
-                                    // make new swipe
-                                    if (this.isUser) {
-                                        // add empty swipe and open editor
-                                        const oldSwipe = this.swipe;
-                                        this.addTextSwipe('');
-                                        this.swipe.isUser = true;
-                                        this.updateRender(oldSwipe.data);
-                                        this.onSwipe(oldSwipe);
-                                        edit.click();
-                                    } else {
-                                        //TODO gen swipe
-                                        const oldSwipe = this.swipe;
-                                        this.addTextSwipe('...');
-                                        this.updateRender(oldSwipe.data);
-                                        this.onSwipe(oldSwipe);
-                                        this.onGenerate();
-                                    }
-                                }
-                            });
+                            swipeRight.addEventListener('click', ()=>this.nextSwipe());
                             actions.append(swipeRight);
                         }
                         const edit = document.createElement('div'); {
                             edit.classList.add('stac--action');
                             edit.classList.add('fa-solid', 'fa-pencil');
                             edit.title = 'Edit message';
-                            let isEditing = false;
-                            /**@type {HTMLElement} */
-                            let editor;
-                            edit.addEventListener('click', ()=>{
-                                if (!isEditing) {
-                                    isEditing = true;
-                                    editor = document.createElement('div'); {
-                                        editor.classList.add('stac--editor');
-                                        editor.classList.add('stac--content');
-                                        editor.classList.add('mes_text');
-                                        editor.contentEditable = 'plaintext-only';
-                                        editor.textContent = this.text;
-                                        editor.addEventListener('keydown', (evt)=>{
-                                            evt.stopPropagation();
-                                            // ctrl+enter to save
-                                            if (evt.ctrlKey && evt.key == 'Enter' && !evt.shiftKey && !evt.altKey) {
-                                                edit.click();
-                                                return;
-                                            }
-                                            // escape to cancel
-                                            if (evt.key == 'Escape' && !evt.ctrlKey && !evt.shiftKey && !evt.altKey) {
-                                                editor.textContent = this.text;
-                                                edit.click();
-                                                return;
-                                            }
-                                        });
-                                        txt.replaceWith(editor);
-                                        editor.focus();
-                                    }
-                                } else {
-                                    this.text = editor.textContent;
-                                    txt.innerHTML = this.messageFormatting();
-                                    editor.replaceWith(txt);
-                                    editor = null;
-                                    this.onChange();
-                                    isEditing = false;
-                                }
-                            });
+                            edit.addEventListener('click', ()=>this.toggleEditor());
                             actions.append(edit);
                         }
                         details.append(actions);

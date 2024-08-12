@@ -30,6 +30,7 @@ export class Settings {
     /**@type {number} */ fontSize = 1.0;
     /**@type {WIDTH_TYPE} */ widthType = WIDTH_TYPE.ASIDE;
     /**@type {number} */ width = 0.5;
+    /**@type {number} */ maxInputHistory = 100;
     /**@type {string} */ userColorBg = 'rgba(120, 120, 120, 0.75)';
     /**@type {string} */ userColorText = 'rgba(255, 255, 255, 1)';
     /**@type {string} */ userColorBgHeader = 'rgba(120, 120, 120, 0.5)';
@@ -48,6 +49,7 @@ export class Settings {
     /**@type {STORY_POSITION} */ storyPosition = STORY_POSITION.BEFORE_CHAT;
     /**@type {number} */ storyDepth = 1;
     /**@type {string} */ character;
+    /**@type {string[]} */ inputHistory = [];
 
     /**@type {BaseSetting[]}*/ settingList = [];
 
@@ -85,6 +87,7 @@ export class Settings {
             storyPosition: this.storyPosition,
             storyDepth: this.storyDepth,
             character: this.character,
+            inputHistory: this.inputHistory,
         };
     }
 
@@ -351,6 +354,8 @@ export class Settings {
                 storyPosition: this.storyPosition,
                 storyDepth: this.storyDepth,
                 character: this.character,
+                maxInputHistory: this.maxInputHistory,
+                inputHistory: this.inputHistory,
             };
             saveMetadataDebounced();
         }

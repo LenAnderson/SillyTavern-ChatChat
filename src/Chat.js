@@ -139,6 +139,7 @@ export class Chat {
             m = message.next;
             const frag = document.createDocumentFragment();
             while (m) {
+                this.hookMessage(m);
                 frag.prepend(m.render());
                 m = m.next;
             }

@@ -1,6 +1,8 @@
 import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, sendMessageAsUser, setExtensionPrompt, system_message_types } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
+import { SlashCommand } from '../../../slash-commands/SlashCommand.js';
+import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
 import { delay } from '../../../utils.js';
 import { getRegexedString, regex_placement } from '../../regex/engine.js';
 import { Chat } from './src/Chat.js';
@@ -156,6 +158,10 @@ const send = async(text)=>{
         hasUserMes = false;
         text = userMes.text;
     } else {
+        settings.inputHistory.unshift(text);
+        settings.inputHistory = settings.inputHistory.filter((it,idx,list)=>idx == list.indexOf(it));
+        while (settings.inputHistory.length > settings.maxInputHistory) settings.inputHistory.pop();
+        settings.save();
         um = Message.fromText(text);
         um.isUser = true;
         currentChat.addMessage(um);
@@ -564,6 +570,85 @@ const init = async()=>{
                 });
                 form.append(inp);
             }
+            const actions = document.createElement('div'); {
+                actions.classList.add('stac--actions');
+                const historyBtn = document.createElement('div'); {
+                    historyBtn.classList.add('stac--action');
+                    historyBtn.classList.add('menu_button');
+                    historyBtn.classList.add('fa-solid', 'fa-clock-rotate-left');
+                    historyBtn.title = 'Input history';
+
+                    let menu;
+                    const hide = async()=>{
+                        menu.classList.remove('stac--active');
+                        await delay(410);
+                        menu.remove();
+                        menu = null;
+                        historyBtn.classList.remove('stac--hasMenu');
+                    };
+                    historyBtn.addEventListener('click', async(evt)=>{
+                        if (menu) return hide();
+                        historyBtn.classList.add('stac--hasMenu');
+                        menu = document.createElement('div'); {
+                            menu.classList.add('stac--history');
+                            const renderItem = (c)=>{
+                                let titleEl;
+                                const item = document.createElement('div'); {
+                                    item.classList.add('stac--item');
+                                    item.title = c;
+                                    const icon = document.createElement('div'); {
+                                        icon.classList.add('stac--icon');
+                                        icon.classList.add('fa-solid', 'fa-comment');
+                                        item.append(icon);
+                                    }
+                                    const label = document.createElement('div'); {
+                                        label.classList.add('stac--label');
+                                        const content = document.createElement('div'); {
+                                            content.classList.add('stac--content');
+                                            const title = document.createElement('div'); {
+                                                titleEl = title;
+                                                title.classList.add('stac--title');
+                                                title.textContent = c;
+                                                content.append(title);
+                                            }
+                                            label.append(content);
+                                        }
+                                        item.append(label);
+                                    }
+                                    item.addEventListener('click', async()=>{
+                                        hide();
+                                        dom.input.textContent = c;
+                                        dom.input.focus();
+                                    });
+                                    menu.append(item);
+                                }
+                            };
+                            for (const c of settings.inputHistory) {
+                                renderItem(c);
+                            }
+                            await waitForFrame();
+                            form.append(menu);
+                            await waitForFrame();
+                            menu.classList.add('stac--active');
+                        }
+                    });
+                    actions.append(historyBtn);
+                }
+                const sendBtn = document.createElement('div'); {
+                    sendBtn.classList.add('stac--action');
+                    sendBtn.classList.add('menu_button');
+                    sendBtn.classList.add('fa-solid', 'fa-paper-plane');
+                    sendBtn.title = 'Send message';
+                    sendBtn.addEventListener('click', async()=>{
+                        const text = dom.input.textContent;
+                        dom.input.textContent = '';
+                        await send(text);
+                        dom.input.focus();
+                    });
+                    actions.append(sendBtn);
+                }
+                form.append(actions);
+            }
             panel.append(form);
         }
         document.body.append(panel);
@@ -581,5 +666,36 @@ const init = async()=>{
     panel.style.setProperty('--botColorTextHeader', settings.botColorTextHeader.toString());
     onChatChanged();
     eventSource.on(event_types.CHAT_CHANGED, ()=>(onChatChanged(), null));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-setinput',
+        callback: (args, value)=>{
+            dom.input.textContent = value.toString();
+            return '';
+        },
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-swipe',
+        /**
+         *
+         * @param {import('../../../slash-commands/SlashCommand.js').NamedArguments & {
+         *  mes:string,
+         * }} args
+         * @param {string} value
+         */
+        callback: (args, value)=>{
+            const idx = Number(args.mes ?? (currentChat.messageCount - 1));
+            let mes = currentChat.rootMessage;
+            for (let i = 0; i < idx; i++) {
+                mes = mes.next;
+                if (!mes) throw new Error(`/chatchat-swipe no message at index mes=${idx}`);
+            }
+            if (value?.length) {
+                mes.addTextSwipe(value);
+            } else {
+                mes.goToSwipe(mes.swipeList.length - 1);
+                mes.nextSwipe();
+            }
+            return '';
+        },
+    }));
 };
 eventSource.on(event_types.APP_READY, ()=>init());
