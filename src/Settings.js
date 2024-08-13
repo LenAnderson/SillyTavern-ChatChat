@@ -93,7 +93,9 @@ export class Settings {
 
     load() {
         Object.assign(this, extension_settings.chatchat ?? {});
-        Object.assign(this, chat_metadata?.chatchat?.settings ?? {});
+        const chatSettings = chat_metadata?.chatchat?.settings ?? {};
+        if (!chatSettings.inputHistory) chatSettings.inputHistory = [];
+        Object.assign(this, chatSettings);
     }
 
 
