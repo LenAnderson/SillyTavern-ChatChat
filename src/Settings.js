@@ -80,6 +80,8 @@ export class Settings {
             botColorText: this.botColorText,
             botColorBgHeader: this.botColorBgHeader,
             botColorTextHeader: this.botColorTextHeader,
+            inputColorBg: this.inputColorBg,
+            inputColorText: this.inputColorText,
 
             scriptBefore: this.scriptBefore,
             scriptAfter: this.scriptAfter,
@@ -345,6 +347,8 @@ export class Settings {
             botColorText: this.botColorText,
             botColorBgHeader: this.botColorBgHeader,
             botColorTextHeader: this.botColorTextHeader,
+            inputColorBg: this.inputColorBg,
+            inputColorText: this.inputColorText,
         };
         saveSettingsDebounced();
         if (chat_metadata) {
