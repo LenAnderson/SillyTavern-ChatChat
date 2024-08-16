@@ -1,10 +1,11 @@
-import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, sendMessageAsUser, setExtensionPrompt, system_message_types } from '../../../../script.js';
+import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, sendMessageAsUser, setExtensionPrompt, system_message_types, this_chid } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
 import { SlashCommand } from '../../../slash-commands/SlashCommand.js';
 import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
 import { delay } from '../../../utils.js';
 import { getRegexedString, regex_placement } from '../../regex/engine.js';
+import { groupId } from '../SillyTavern-TriggerCards/index.js';
 import { Chat } from './src/Chat.js';
 import { waitForFrame } from './src/lib/wait.js';
 import { Message } from './src/Message.js';
@@ -93,9 +94,17 @@ let chatIndex = 0;
 let currentChat = chatList[0];
 const dom = {
     /**@type {HTMLElement} */
+    trigger: undefined,
+    /**@type {HTMLElement} */
+    panel: undefined,
+    /**@type {HTMLElement} */
     messages: undefined,
     /**@type {HTMLElement} */
+    form: undefined,
+    /**@type {HTMLElement} */
     input: undefined,
+    /**@type {HTMLElement} */
+    historyBtn: undefined,
 };
 export const initMetadata = ()=>{
     if (!chat_metadata.chatchat) chat_metadata.chatchat = {};
@@ -142,6 +151,13 @@ const onChatChanged = async()=>{
     chatIndex = chat_metadata.chatchat.chatIndex;
     currentChat = chatList[chatIndex];
     reloadChat();
+    if ((this_chid === null || this_chid === undefined) && (groupId === null || groupId === undefined)) {
+        document.body.classList.add('stac--nochat');
+        hideMenu();
+        hideHistoryMenu();
+    } else {
+        document.body.classList.remove('stac--nochat');
+    }
 };
 const reloadChat = async()=>{
     currentChat.render(dom.messages);
@@ -300,9 +316,280 @@ const loadSettings = ()=>{
 };
 
 
+let menu;
+const hideMenu = async()=>{
+    if (!menu) return;
+    menu.classList.remove('stac--active');
+    await delay(410);
+    menu.remove();
+    menu = null;
+    dom.trigger.classList.remove('stac--hasMenu');
+};
+const showMenu = async()=>{
+    if (menu) return hideMenu();
+    dom.trigger.classList.add('stac--hasMenu');
+    menu = document.createElement('div'); {
+        menu.classList.add('stac--menu');
+        const settingsItem = document.createElement('div'); {
+            settingsItem.classList.add('stac--item');
+            settingsItem.classList.add('stac--settings');
+            const icon = document.createElement('div'); {
+                icon.classList.add('stac--icon');
+                icon.classList.add('fa-solid', 'fa-cog');
+                settingsItem.append(icon);
+            }
+            const label = document.createElement('div'); {
+                label.classList.add('stac--label');
+                label.textContent = 'Settings';
+                settingsItem.append(label);
+            }
+            settingsItem.addEventListener('click', async()=>{
+                hideMenu();
+                settings.hide();
+                settings.load();
+                settings.registerSettings();
+                await settings.init();
+                settings.show();
+            });
+            menu.append(settingsItem);
+        }
+        const newChat = document.createElement('div'); {
+            newChat.classList.add('stac--item');
+            newChat.classList.add('stac--newChat');
+            const icon = document.createElement('div'); {
+                icon.classList.add('stac--icon');
+                icon.classList.add('fa-solid', 'fa-comment-medical');
+                newChat.append(icon);
+            }
+            const label = document.createElement('div'); {
+                label.classList.add('stac--label');
+                label.textContent = 'Start new chat';
+                newChat.append(label);
+            }
+            newChat.addEventListener('click', async()=>{
+                hideMenu();
+                const nc = addChat();
+                chatIndex++;
+                currentChat = nc;
+                save();
+                reloadChat();
+                dom.panel.classList.add('stac--active');
+                dom.input.focus();
+            });
+            menu.append(newChat);
+        }
+        const renderItem = (c)=>{
+            let titleEl;
+            const item = document.createElement('div'); {
+                item.classList.add('stac--item');
+                item.classList.add('stac--chat');
+                if (c == currentChat) item.classList.add('stac--current');
+                const titleParts = [
+                    c.rootMessage?.text?.split('\n')?.filter(it=>it.length)?.[0],
+                    '...',
+                    c.leafMessage?.text?.split('\n')?.filter(it=>it.length)?.slice(-1)?.[0],
+                ].filter(it=>it);
+                if (titleParts.length > 1) {
+                    item.title = titleParts.join('\n');
+                } else {
+                    item.title = 'No messages';
+                }
+                const icon = document.createElement('div'); {
+                    icon.classList.add('stac--icon');
+                    icon.classList.add('fa-solid', 'fa-comments');
+                    item.append(icon);
+                }
+                const label = document.createElement('div'); {
+                    label.classList.add('stac--label');
+                    const content = document.createElement('div'); {
+                        content.classList.add('stac--content');
+                        const title = document.createElement('div'); {
+                            titleEl = title;
+                            title.classList.add('stac--title');
+                            title.textContent = c.title;
+                            content.append(title);
+                        }
+                        const meta = document.createElement('div'); {
+                            meta.classList.add('stac--meta');
+                            const count = document.createElement('div'); {
+                                count.classList.add('stac--count');
+                                const icon = document.createElement('i'); {
+                                    icon.classList.add('stac--icon');
+                                    icon.classList.add('fa-solid', 'fa-fw', 'fa-comment');
+                                    count.append(icon);
+                                }
+                                count.append(c.messageCount.toString());
+                                meta.append(count);
+                            }
+                            const dt = document.createElement('div'); {
+                                dt.classList.add('stac--date');
+                                const icon = document.createElement('i'); {
+                                    icon.classList.add('stac--icon');
+                                    icon.classList.add('fa-solid', 'fa-fw', 'fa-calendar-alt');
+                                    dt.append(icon);
+                                }
+                                dt.append(`${c.firstMessageOn} - ${c.lastMessageOn}`);
+                                meta.append(dt);
+                            }
+                            content.append(meta);
+                        }
+                        label.append(content);
+                    }
+                    const actions = document.createElement('div'); {
+                        actions.classList.add('stac--actions');
+                        const del = document.createElement('div'); {
+                            del.classList.add('stac--action');
+                            del.classList.add('menu_button');
+                            del.classList.add('fa-solid', 'fa-fw', 'fa-trash-can');
+                            del.title = 'Delete chat\n---\nNo warning, no confirm. When it\'s gone it\'s gone...';
+                            del.addEventListener('click', (evt)=>{
+                                evt.stopPropagation();
+                                let isCurrent = currentChat == c;
+                                chatList.splice(chatList.indexOf(c), 1);
+                                if (isCurrent) {
+                                    if (chatList.length > chatIndex) {
+                                        // keep index, show next chat
+                                        currentChat = chatList[chatIndex];
+                                        item.previousElementSibling.classList.add('stac--current');
+                                    } else if (chatList.length > 0) {
+                                        // show prev chat
+                                        chatIndex--;
+                                        currentChat = chatList[chatIndex];
+                                        item.nextElementSibling.classList.add('stac--current');
+                                    } else {
+                                        // add new empty chat
+                                        const nc = addChat();
+                                        currentChat = nc;
+                                        renderItem(nc);
+                                    }
+                                } else {
+                                    chatIndex = chatList.indexOf(currentChat);
+                                }
+                                item.style.height = `${item.getBoundingClientRect().height}px`;
+                                waitForFrame().then(async()=>{
+                                    item.classList.add('stac--remove');
+                                    item.style.height = '0';
+                                    await delay(410);
+                                    item.remove();
+                                });
+                                save();
+                                if (isCurrent) {
+                                    reloadChat();
+                                }
+                            });
+                            actions.append(del);
+                        }
+                        const rename = document.createElement('div'); {
+                            rename.classList.add('stac--action');
+                            rename.classList.add('menu_button');
+                            rename.classList.add('fa-solid', 'fa-fw', 'fa-pencil');
+                            rename.title = 'Rename chat';
+                            rename.addEventListener('click', (evt)=>{
+                                evt.stopPropagation();
+                                titleEl.contentEditable = 'plaintext-only';
+                                titleEl.focus();
+                                const range = document.createRange();
+                                range.selectNodeContents(titleEl);
+                                const sel = window.getSelection();
+                                sel.removeAllRanges();
+                                sel.addRange(range);
+                                const listener = (evt)=>{
+                                    evt.stopPropagation();
+                                    if (evt.shiftKey || evt.altKey || evt.ctrlKey || evt.key != 'Enter') return;
+                                    titleEl.removeEventListener('keydown', listener);
+                                    titleEl.removeAttribute('contenteditable');
+                                    c.title = titleEl.textContent;
+                                    save();
+                                };
+                                titleEl.addEventListener('keydown', listener);
+                            });
+                            actions.append(rename);
+                        }
+                        label.append(actions);
+                    }
+                    item.append(label);
+                }
+                item.addEventListener('click', async()=>{
+                    hideMenu();
+                    chatIndex = chatList.indexOf(c);
+                    currentChat = c;
+                    save();
+                    reloadChat();
+                    dom.panel.classList.add('stac--active');
+                    dom.input.focus();
+                });
+                menu.append(item);
+            }
+        };
+        for (const c of chatList.toSorted((a,b)=>b.lastChatOn - a.lastChatOn)) {
+            renderItem(c);
+        }
+        await waitForFrame();
+        document.body.append(menu);
+        await waitForFrame();
+        menu.classList.add('stac--active');
+    }
+};
+
+let historyMenu;
+const hideHistoryMenu = async()=>{
+    if (!historyMenu) return;
+    historyMenu.classList.remove('stac--active');
+    await delay(410);
+    historyMenu.remove();
+    historyMenu = null;
+    dom.historyBtn.classList.remove('stac--hasMenu');
+};
+const showHistoryMenu = async()=>{
+    if (historyMenu) return hideHistoryMenu();
+    dom.historyBtn.classList.add('stac--hasMenu');
+    historyMenu = document.createElement('div'); {
+        historyMenu.classList.add('stac--history');
+        const renderItem = (c)=>{
+            const item = document.createElement('div'); {
+                item.classList.add('stac--item');
+                item.title = c;
+                const icon = document.createElement('div'); {
+                    icon.classList.add('stac--icon');
+                    icon.classList.add('fa-solid', 'fa-comment');
+                    item.append(icon);
+                }
+                const label = document.createElement('div'); {
+                    label.classList.add('stac--label');
+                    const content = document.createElement('div'); {
+                        content.classList.add('stac--content');
+                        const title = document.createElement('div'); {
+                            title.classList.add('stac--title');
+                            title.textContent = c;
+                            content.append(title);
+                        }
+                        label.append(content);
+                    }
+                    item.append(label);
+                }
+                item.addEventListener('click', async()=>{
+                    hideHistoryMenu();
+                    dom.input.textContent = c;
+                    dom.input.focus();
+                });
+                historyMenu.append(item);
+            }
+        };
+        for (const c of settings.inputHistory) {
+            renderItem(c);
+        }
+        await waitForFrame();
+        dom.form.append(historyMenu);
+        await waitForFrame();
+        historyMenu.classList.add('stac--active');
+    }
+};
+
+
 const init = async()=>{
     loadSettings();
     const trigger = document.createElement('div'); {
+        dom.trigger = trigger;
         trigger.classList.add('stac--trigger');
         trigger.classList.add('fa', 'fa-solid', 'fa-comment-alt');
         trigger.title = 'Click to toggle ChatChat\nRight-click for settings and chat management';
@@ -313,223 +600,14 @@ const init = async()=>{
                 dom.input.blur();
             }
         });
-        let menu;
-        const hide = async()=>{
-            menu.classList.remove('stac--active');
-            await delay(410);
-            menu.remove();
-            menu = null;
-            trigger.classList.remove('stac--hasMenu');
-        };
         trigger.addEventListener('contextmenu', async(evt)=>{
             evt.preventDefault();
-            if (menu) return hide();
-            trigger.classList.add('stac--hasMenu');
-            menu = document.createElement('div'); {
-                menu.classList.add('stac--menu');
-                const settingsItem = document.createElement('div'); {
-                    settingsItem.classList.add('stac--item');
-                    settingsItem.classList.add('stac--settings');
-                    const icon = document.createElement('div'); {
-                        icon.classList.add('stac--icon');
-                        icon.classList.add('fa-solid', 'fa-cog');
-                        settingsItem.append(icon);
-                    }
-                    const label = document.createElement('div'); {
-                        label.classList.add('stac--label');
-                        label.textContent = 'Settings';
-                        settingsItem.append(label);
-                    }
-                    settingsItem.addEventListener('click', async()=>{
-                        hide();
-                        settings.hide();
-                        settings.load();
-                        settings.registerSettings();
-                        await settings.init();
-                        settings.show();
-                    });
-                    menu.append(settingsItem);
-                }
-                const newChat = document.createElement('div'); {
-                    newChat.classList.add('stac--item');
-                    newChat.classList.add('stac--newChat');
-                    const icon = document.createElement('div'); {
-                        icon.classList.add('stac--icon');
-                        icon.classList.add('fa-solid', 'fa-comment-medical');
-                        newChat.append(icon);
-                    }
-                    const label = document.createElement('div'); {
-                        label.classList.add('stac--label');
-                        label.textContent = 'Start new chat';
-                        newChat.append(label);
-                    }
-                    newChat.addEventListener('click', async()=>{
-                        hide();
-                        const nc = addChat();
-                        chatIndex++;
-                        currentChat = nc;
-                        save();
-                        reloadChat();
-                        panel.classList.add('stac--active');
-                        dom.input.focus();
-                    });
-                    menu.append(newChat);
-                }
-                const renderItem = (c)=>{
-                    let titleEl;
-                    const item = document.createElement('div'); {
-                        item.classList.add('stac--item');
-                        item.classList.add('stac--chat');
-                        if (c == currentChat) item.classList.add('stac--current');
-                        const titleParts = [
-                            c.rootMessage?.text?.split('\n')?.filter(it=>it.length)?.[0],
-                            '...',
-                            c.leafMessage?.text?.split('\n')?.filter(it=>it.length)?.slice(-1)?.[0],
-                        ].filter(it=>it);
-                        if (titleParts.length > 1) {
-                            item.title = titleParts.join('\n');
-                        } else {
-                            item.title = 'No messages';
-                        }
-                        const icon = document.createElement('div'); {
-                            icon.classList.add('stac--icon');
-                            icon.classList.add('fa-solid', 'fa-comments');
-                            item.append(icon);
-                        }
-                        const label = document.createElement('div'); {
-                            label.classList.add('stac--label');
-                            const content = document.createElement('div'); {
-                                content.classList.add('stac--content');
-                                const title = document.createElement('div'); {
-                                    titleEl = title;
-                                    title.classList.add('stac--title');
-                                    title.textContent = c.title;
-                                    content.append(title);
-                                }
-                                const meta = document.createElement('div'); {
-                                    meta.classList.add('stac--meta');
-                                    const count = document.createElement('div'); {
-                                        count.classList.add('stac--count');
-                                        const icon = document.createElement('i'); {
-                                            icon.classList.add('stac--icon');
-                                            icon.classList.add('fa-solid', 'fa-fw', 'fa-comment');
-                                            count.append(icon);
-                                        }
-                                        count.append(c.messageCount.toString());
-                                        meta.append(count);
-                                    }
-                                    const dt = document.createElement('div'); {
-                                        dt.classList.add('stac--date');
-                                        const icon = document.createElement('i'); {
-                                            icon.classList.add('stac--icon');
-                                            icon.classList.add('fa-solid', 'fa-fw', 'fa-calendar-alt');
-                                            dt.append(icon);
-                                        }
-                                        dt.append(`${c.firstMessageOn} - ${c.lastMessageOn}`);
-                                        meta.append(dt);
-                                    }
-                                    content.append(meta);
-                                }
-                                label.append(content);
-                            }
-                            const actions = document.createElement('div'); {
-                                actions.classList.add('stac--actions');
-                                const del = document.createElement('div'); {
-                                    del.classList.add('stac--action');
-                                    del.classList.add('menu_button');
-                                    del.classList.add('fa-solid', 'fa-fw', 'fa-trash-can');
-                                    del.title = 'Delete chat\n---\nNo warning, no confirm. When it\'s gone it\'s gone...';
-                                    del.addEventListener('click', (evt)=>{
-                                        evt.stopPropagation();
-                                        let isCurrent = currentChat == c;
-                                        chatList.splice(chatList.indexOf(c), 1);
-                                        if (isCurrent) {
-                                            if (chatList.length > chatIndex) {
-                                                // keep index, show next chat
-                                                currentChat = chatList[chatIndex];
-                                                item.previousElementSibling.classList.add('stac--current');
-                                            } else if (chatList.length > 0) {
-                                                // show prev chat
-                                                chatIndex--;
-                                                currentChat = chatList[chatIndex];
-                                                item.nextElementSibling.classList.add('stac--current');
-                                            } else {
-                                                // add new empty chat
-                                                const nc = addChat();
-                                                currentChat = nc;
-                                                renderItem(nc);
-                                            }
-                                        } else {
-                                            chatIndex = chatList.indexOf(currentChat);
-                                        }
-                                        item.style.height = `${item.getBoundingClientRect().height}px`;
-                                        waitForFrame().then(async()=>{
-                                            item.classList.add('stac--remove');
-                                            item.style.height = '0';
-                                            await delay(410);
-                                            item.remove();
-                                        });
-                                        save();
-                                        if (isCurrent) {
-                                            reloadChat();
-                                        }
-                                    });
-                                    actions.append(del);
-                                }
-                                const rename = document.createElement('div'); {
-                                    rename.classList.add('stac--action');
-                                    rename.classList.add('menu_button');
-                                    rename.classList.add('fa-solid', 'fa-fw', 'fa-pencil');
-                                    rename.title = 'Rename chat';
-                                    rename.addEventListener('click', (evt)=>{
-                                        evt.stopPropagation();
-                                        titleEl.contentEditable = 'plaintext-only';
-                                        titleEl.focus();
-                                        const range = document.createRange();
-                                        range.selectNodeContents(titleEl);
-                                        const sel = window.getSelection();
-                                        sel.removeAllRanges();
-                                        sel.addRange(range);
-                                        const listener = (evt)=>{
-                                            evt.stopPropagation();
-                                            if (evt.shiftKey || evt.altKey || evt.ctrlKey || evt.key != 'Enter') return;
-                                            titleEl.removeEventListener('keydown', listener);
-                                            titleEl.removeAttribute('contenteditable');
-                                            c.title = titleEl.textContent;
-                                            save();
-                                        };
-                                        titleEl.addEventListener('keydown', listener);
-                                    });
-                                    actions.append(rename);
-                                }
-                                label.append(actions);
-                            }
-                            item.append(label);
-                        }
-                        item.addEventListener('click', async()=>{
-                            hide();
-                            chatIndex = chatList.indexOf(c);
-                            currentChat = c;
-                            save();
-                            reloadChat();
-                            panel.classList.add('stac--active');
-                            dom.input.focus();
-                        });
-                        menu.append(item);
-                    }
-                };
-                for (const c of chatList.toSorted((a,b)=>b.lastChatOn - a.lastChatOn)) {
-                    renderItem(c);
-                }
-                await waitForFrame();
-                document.body.append(menu);
-                await waitForFrame();
-                menu.classList.add('stac--active');
-            }
+            showMenu();
         });
         document.body.append(trigger);
     }
     const panel = document.createElement('div'); {
+        dom.panel = panel;
         panel.classList.add('stac--panel');
         const head = document.createElement('div'); {
             head.classList.add('stac--head');
@@ -541,6 +619,7 @@ const init = async()=>{
             panel.append(messages);
         }
         const form = document.createElement('div'); {
+            dom.form = form;
             form.classList.add('stac--form');
             const inp = document.createElement('div'); {
                 dom.input = inp;
@@ -573,64 +652,13 @@ const init = async()=>{
             const actions = document.createElement('div'); {
                 actions.classList.add('stac--actions');
                 const historyBtn = document.createElement('div'); {
+                    dom.historyBtn = historyBtn;
                     historyBtn.classList.add('stac--action');
                     historyBtn.classList.add('menu_button');
                     historyBtn.classList.add('fa-solid', 'fa-clock-rotate-left');
                     historyBtn.title = 'Input history';
-
-                    let menu;
-                    const hide = async()=>{
-                        menu.classList.remove('stac--active');
-                        await delay(410);
-                        menu.remove();
-                        menu = null;
-                        historyBtn.classList.remove('stac--hasMenu');
-                    };
                     historyBtn.addEventListener('click', async(evt)=>{
-                        if (menu) return hide();
-                        historyBtn.classList.add('stac--hasMenu');
-                        menu = document.createElement('div'); {
-                            menu.classList.add('stac--history');
-                            const renderItem = (c)=>{
-                                let titleEl;
-                                const item = document.createElement('div'); {
-                                    item.classList.add('stac--item');
-                                    item.title = c;
-                                    const icon = document.createElement('div'); {
-                                        icon.classList.add('stac--icon');
-                                        icon.classList.add('fa-solid', 'fa-comment');
-                                        item.append(icon);
-                                    }
-                                    const label = document.createElement('div'); {
-                                        label.classList.add('stac--label');
-                                        const content = document.createElement('div'); {
-                                            content.classList.add('stac--content');
-                                            const title = document.createElement('div'); {
-                                                titleEl = title;
-                                                title.classList.add('stac--title');
-                                                title.textContent = c;
-                                                content.append(title);
-                                            }
-                                            label.append(content);
-                                        }
-                                        item.append(label);
-                                    }
-                                    item.addEventListener('click', async()=>{
-                                        hide();
-                                        dom.input.textContent = c;
-                                        dom.input.focus();
-                                    });
-                                    menu.append(item);
-                                }
-                            };
-                            for (const c of settings.inputHistory) {
-                                renderItem(c);
-                            }
-                            await waitForFrame();
-                            form.append(menu);
-                            await waitForFrame();
-                            menu.classList.add('stac--active');
-                        }
+                        showHistoryMenu();
                     });
                     actions.append(historyBtn);
                 }

@@ -1,4 +1,9 @@
 @import "UserSettings.style.css";
+.stac--nochat .stac--trigger,
+.stac--nochat .stac--panel,
+.stac--nochat .stac--menu {
+  display: none;
+}
 .stac--trigger {
   position: absolute;
   bottom: 0.125em;
