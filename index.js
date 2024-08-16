@@ -656,6 +656,8 @@ const init = async()=>{
     panel.style.setProperty('--fontSize', settings.fontSize.toString());
     panel.classList[settings.widthType == WIDTH_TYPE.SCREEN ? 'add' : 'remove']('stac--unlocked');
     panel.style.setProperty('--width', settings.width.toString());
+    panel.style.setProperty('--inputColorBg', settings.inputColorBg.toString());
+    panel.style.setProperty('--inputColorText', settings.inputColorText.toString());
     panel.style.setProperty('--userColorBg', settings.userColorBg.toString());
     panel.style.setProperty('--userColorText', settings.userColorText.toString());
     panel.style.setProperty('--userColorBgHeader', settings.userColorBgHeader.toString());
