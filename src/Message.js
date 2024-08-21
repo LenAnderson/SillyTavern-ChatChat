@@ -1,6 +1,7 @@
 import { messageFormatting } from '../../../../../script.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay } from '../../../../utils.js';
+import { waitForFrame } from './lib/wait.js';
 
 
 
@@ -399,23 +400,80 @@ export class Message {
                         const del = document.createElement('div'); {
                             del.classList.add('stac--action');
                             del.classList.add('fa-solid', 'fa-trash-can');
-                            del.title = 'Delete message\nShift-click to also delete all following messages\nCtrl-click to delete swipe (including following messages)\n---\nNo warning, no confirm. When it\'s gone it\'s gone...';
+                            del.title = 'Show delete menu';
+                            let delMenu;
+                            const hideDelMenu = async()=>{
+                                delMenu.classList.remove('stac--active');
+                                await delay(210);
+                                delMenu.remove();
+                                delMenu = null;
+                            };
                             del.addEventListener('click', async(evt)=>{
-                                if (evt.ctrlKey) {
-                                    if (this.swipeList.length < 2) return;
-                                    const oldSwipe = this.swipe;
-                                    this.swipeList.splice(this.swipeIndex, 1);
-                                    if (this.swipeList.length > this.swipeIndex) {
-                                        // swipes to the right available, switch to next swipe
-                                    } else {
-                                        this.swipeIndex--;
+                                if (delMenu) {
+                                    await hideDelMenu();
+                                    return;
+                                }
+                                const menu = document.createElement('div'); {
+                                    delMenu = menu;
+                                    menu.classList.add('stac--delMenu');
+                                    // if (actions.getBoundingClientRect().top > window.innerHeight / 2) {
+                                    //     menu.classList.add('stac--up');
+                                    // } else {
+                                    //     menu.classList.add('stac--down');
+                                    // }
+                                    menu.classList.add('stac--down');
+                                    const tt = {
+                                        'deleteMessage': 'Delete message and swipes',
+                                        'deleteBranch': 'Delete branch (message, swipes, and following messages)',
+                                        'deleteSwipe': 'Delete swipe and following messages',
+                                    };
+                                    const src = [this.isUser ? 'user' : 'bot', this.isUser ? 'bot' : 'user'];
+                                    for (const t of ['deleteMessage', 'deleteBranch', 'deleteSwipe']) {
+                                        const opt = document.createElement('div'); {
+                                            opt.classList.add('stac--item');
+                                            opt.classList.add(`stac--${t}`);
+                                            opt.title = tt[t];
+                                            opt.addEventListener('click', ()=>{
+                                                hideDelMenu();
+                                                switch (t) {
+                                                    case 'deleteMessage': {
+                                                        this.onDelete(false);
+                                                        this.renderOut();
+                                                        break;
+                                                    }
+                                                    case 'deleteBranch': {
+                                                        this.onDelete(true);
+                                                        this.renderOut();
+                                                        break;
+                                                    }
+                                                    case 'deleteSwipe': {
+                                                        if (this.swipeList.length < 2) return;
+                                                        const oldSwipe = this.swipe;
+                                                        this.swipeList.splice(this.swipeIndex, 1);
+                                                        if (this.swipeList.length > this.swipeIndex) {
+                                                            // swipes to the right available, switch to next swipe
+                                                        } else {
+                                                            this.swipeIndex--;
+                                                        }
+                                                        this.updateRender(oldSwipe.data);
+                                                        this.onSwipe(oldSwipe);
+                                                        this.onChange();
+                                                        break;
+                                                    }
+                                                }
+                                            });
+                                            for (const idx of [1, 2, 3, 4]) {
+                                                const m = document.createElement('div'); {
+                                                    m.classList.add(`stac--${idx % 2 == 0 ? src[0] : [src[1]]}`);
+                                                    opt.append(m);
+                                                }
+                                            }
+                                            menu.append(opt);
+                                        }
                                     }
-                                    this.updateRender(oldSwipe.data);
-                                    this.onSwipe(oldSwipe);
-                                    this.onChange();
-                                } else {
-                                    this.onDelete(evt.shiftKey);
-                                    this.renderOut();
+                                    actions.append(menu);
+                                    await waitForFrame();
+                                    menu.classList.add('stac--active');
                                 }
                             });
                             actions.append(del);

@@ -225,6 +225,7 @@
   font-size: 0.75em;
   display: flex;
   gap: 0.5em;
+  position: relative;
 }
 .stac--details .stac--info {
   margin: 0 -0.5em;
@@ -249,6 +250,146 @@
 .stac--details .stac--action.stac--failure {
   background-color: #bd362f;
   opacity: 1;
+}
+.stac--delMenu {
+  filter: drop-shadow(1px 1px 2px var(--black50a));
+  z-index: 30000;
+  border-radius: 10px;
+  padding: 0.5em;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+  backdrop-filter: blur(10px);
+  position: absolute;
+  right: 0;
+  transition: 200ms;
+  transform-origin: center top;
+  scale: 0;
+}
+.stac--delMenu.stac--up {
+  bottom: 100%;
+}
+.stac--delMenu.stac--down {
+  top: 100%;
+}
+.stac--delMenu.stac--active {
+  scale: 1;
+}
+.stac--delMenu .stac--item {
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+  width: 6em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  padding: 0.5em;
+  overflow: hidden;
+  background-color: var(--secondaryBg, var(--SmartThemeBlurTintColor));
+  filter: saturate(0);
+  transition: 200ms;
+  cursor: pointer;
+}
+.stac--delMenu .stac--item:hover {
+  filter: saturate(1);
+}
+.stac--delMenu .stac--item.stac--deleteMessage :nth-child(2) {
+  animation-name: stac--del-mes-target;
+  animation-duration: 2400ms;
+  animation-timing-function: linear;
+  animation-delay: 0s;
+  animation-iteration-count: infinite;
+}
+.stac--delMenu .stac--item.stac--deleteMessage :nth-child(n+3) {
+  animation-name: stac--del-mes-follow;
+  animation-duration: 2400ms;
+  animation-timing-function: linear;
+  animation-delay: 0s;
+  animation-iteration-count: infinite;
+}
+.stac--delMenu .stac--item.stac--deleteBranch :nth-child(n+2) {
+  animation-name: stac--del-mes-target;
+  animation-duration: 2400ms;
+  animation-timing-function: linear;
+  animation-delay: 0s;
+  animation-iteration-count: infinite;
+}
+.stac--delMenu .stac--item.stac--deleteSwipe :nth-child(n+2) {
+  animation-name: stac--del-mes-target-return;
+  animation-duration: 2400ms;
+  animation-timing-function: linear;
+  animation-delay: 0s;
+  animation-iteration-count: infinite;
+}
+.stac--delMenu .stac--item > div {
+  border-radius: 3px;
+  height: 2em;
+  border-top-width: 5px;
+  border-top-style: solid;
+  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+.stac--delMenu .stac--item > div.stac--user {
+  margin-left: 1em;
+  background-color: var(--userColorBg);
+  border-top-color: var(--userColorBgHeader);
+  color: var(--userColorText);
+}
+.stac--delMenu .stac--item > div.stac--bot {
+  margin-right: 1em;
+  background-color: var(--botColorBg);
+  border-top-color: var(--botColorBgHeader);
+  color: var(--botColorText);
+}
+@keyframes stac--del-mes-target {
+  0% {
+    left: 0;
+  }
+  25% {
+    left: 0;
+  }
+  48% {
+    left: 120%;
+  }
+  100% {
+    left: 120%;
+  }
+}
+@keyframes stac--del-mes-target-return {
+  0% {
+    left: 0;
+  }
+  25% {
+    left: 0;
+  }
+  48% {
+    left: 120%;
+  }
+  48.001% {
+    left: -120%;
+  }
+  52% {
+    left: -120%;
+  }
+  75% {
+    left: 0;
+  }
+  100% {
+    left: 0;
+  }
+}
+@keyframes stac--del-mes-follow {
+  0% {
+    top: 0;
+  }
+  52% {
+    top: 0;
+  }
+  75% {
+    top: calc(-2em - 0.6em);
+  }
+  100% {
+    top: calc(-2em - 0.6em);
+  }
 }
 .stac--form {
   flex: 0 0 auto;
