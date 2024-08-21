@@ -264,23 +264,28 @@ const gen = async(history, userText, bm)=>{
     let botMes;
     const idx = chat.length;
     let isDone = false;
-    const prom = Generate('normal').then(()=>isDone = true);
-    let mes;
     let mo;
-    while (!isDone && !mes) {
-        mes = document.querySelector(`#chat .mes[mesid="${idx}"] .mes_text`);
-        if (mes) {
-            mo = new MutationObserver(()=>bm.updateContent(mes.innerHTML));
-            mo.observe(mes, { characterData:true, childList:true, subtree:true });
+    try {
+        const prom = Generate('normal').then(()=>isDone = true);
+        let mes;
+        while (!isDone && !mes) {
+            mes = document.querySelector(`#chat .mes[mesid="${idx}"] .mes_text`);
+            if (mes) {
+                mo = new MutationObserver(()=>bm.updateContent(mes.innerHTML));
+                mo.observe(mes, { characterData:true, childList:true, subtree:true });
+            }
+            await delay(100);
         }
-        await delay(100);
+        await prom;
+    } catch (ex) {
+        console.error('[STAC]', ex);
+        toastr.error(ex.message, 'ChatChat');
     }
-    await prom;
-    mo.disconnect();
+    mo?.disconnect();
     botMes = structuredClone(chat.slice(-1)[0]);
     dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
     chat.splice(0, chatClone.length, ...chatClone);
-    await executeSlashCommandsWithOptions(`/cut ${chat.length - 2}-{{lastMessageId}}`);
+    await executeSlashCommandsWithOptions(`/cut ${chatClone.length}-{{lastMessageId}}`);
     style.remove();
     settings.injectList.forEach(({ text, position, depth, scan, role },idx)=>setExtensionPrompt(
         `chatchat-user-${idx}`,
