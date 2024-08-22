@@ -104,16 +104,16 @@
 .stac--panel {
   --fontSize: 1;
   --width: 0.5;
-  --userColorBg: rgba(120, 120, 120, 0.75);
-  --userColorText: #ffffff;
-  --userColorBgHeader: rgba(120, 120, 120, 0.5);
-  --userColorTextHeader: #ffffff;
-  --botColorBg: rgba(0, 0, 255, 0.75);
-  --botColorText: #ffffff;
-  --botColorBgHeader: rgba(0, 0, 255, 0.5);
-  --botColorTextHeader: #ffffff;
-  --inputColorBg: rgba(0, 0, 0, 0.3);
+  --inputColorBg: rgba(0, 0, 0, 0.7);
   --inputColorText: #ffffff;
+  --userColorBg: #2d2d2d;
+  --userColorText: #ffffff;
+  --userColorBgHeader: #454545;
+  --userColorTextHeader: #ffffff;
+  --botColorBg: rgba(17, 17, 55, 0.85);
+  --botColorText: #ffffff;
+  --botColorBgHeader: #444458;
+  --botColorTextHeader: #ffffff;
   font-size: calc(1em * var(--fontSize));
   filter: drop-shadow(1px 1px 2px var(--black50a));
   z-index: 3000;
@@ -230,6 +230,13 @@
 .stac--details .stac--info {
   margin: 0 -0.5em;
   opacity: 0.5;
+}
+.stac--details .stac--info.stac--swipesCount {
+  transition: 200ms;
+  cursor: pointer;
+}
+.stac--details .stac--info.stac--swipesCount:hover {
+  opacity: 1;
 }
 .stac--details .stac--action {
   aspect-ratio: 1 / 1;
@@ -499,4 +506,90 @@
 .stac--history .stac--item .stac--title::first-line {
   font-size: calc(0.9em / 0.75);
   color: var(--SmartThemeBodyColor);
+}
+.popup:has(.stac--swipesDlg) {
+  aspect-ratio: unset;
+  height: 95dvh;
+  width: 95dvw;
+}
+.popup:has(.stac--swipesDlg) .popup-content {
+  display: flex;
+  flex-direction: column;
+}
+body .stac--swipesDlg {
+  --inputColorBg: rgba(0, 0, 0, 0.7);
+  --inputColorText: #ffffff;
+  --userColorBg: #2d2d2d;
+  --userColorText: #ffffff;
+  --userColorBgHeader: #454545;
+  --userColorTextHeader: #ffffff;
+  --botColorBg: rgba(17, 17, 55, 0.85);
+  --botColorText: #ffffff;
+  --botColorBgHeader: #444458;
+  --botColorTextHeader: #ffffff;
+  display: flex;
+  gap: 1em;
+  overflow: clip;
+  text-align: left;
+  font-size: small;
+  overflow-x: auto;
+}
+body .stac--swipesDlg .stac--branch {
+  flex: 1 0 calc(25% - 3em / 4);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--SmartThemeBotMesBlurTintColor);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 4px;
+}
+body .stac--swipesDlg .stac--actions {
+  display: flex;
+  gap: 1em;
+}
+body .stac--swipesDlg .stac--branch > .stac--actions {
+  justify-content: end;
+}
+body .stac--swipesDlg .stac--message > .stac--actions {
+  margin: -10px;
+  border-radius: 4px 4px 0 0;
+  padding: 1px 4px;
+}
+body .stac--swipesDlg .stac--action {
+  margin: 0;
+}
+body .stac--swipesDlg .stac--messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+body .stac--swipesDlg .stac--message {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  align-items: stretch;
+  margin: 0;
+  width: unset;
+}
+body .stac--swipesDlg .stac--message.stac--user {
+  margin-left: 1em;
+  background-color: var(--userColorBg);
+  color: var(--userColorText);
+}
+body .stac--swipesDlg .stac--message.stac--bot {
+  margin-right: 1em;
+  background-color: var(--botColorBg);
+  color: var(--botColorText);
+}
+body .stac--swipesDlg .stac--message .stac--content > :first-child {
+  margin-top: 0;
+}
+body .stac--swipesDlg .stac--message .stac--content > :last-child {
+  margin-bottom: 0;
+}
+body .stac--swipesDlg .stac--message .stac--content pre > code {
+  font-size: 0.6em;
+}
+body .stac--swipesDlg .stac--message.stac--collapsed > .stac--content {
+  display: none;
 }

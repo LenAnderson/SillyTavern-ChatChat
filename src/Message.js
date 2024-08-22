@@ -1,4 +1,5 @@
 import { messageFormatting } from '../../../../../script.js';
+import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay } from '../../../../utils.js';
 import { waitForFrame } from './lib/wait.js';
@@ -529,7 +530,101 @@ export class Message {
                         const swipes = document.createElement('div'); {
                             this.dom.swipes = swipes;
                             swipes.classList.add('stac--info');
+                            swipes.classList.add('stac--swipesCount');
                             swipes.textContent = `${this.swipeIndex + 1} / ${(this.swipeList.length)}`;
+                            swipes.title = 'Manage swipes / branches';
+                            swipes.addEventListener('click', async()=>{
+                                const dom = document.createElement('div'); {
+                                    dom.classList.add('stac--swipesDlg');
+                                    for (const swipe of this.swipeList) {
+                                        const branch = document.createElement('div'); {
+                                            branch.classList.add('stac--branch');
+                                            const actions = document.createElement('div'); {
+                                                actions.classList.add('stac--actions');
+                                                const sel = document.createElement('div'); {
+                                                    sel.classList.add('stac--action');
+                                                    sel.classList.add('menu_button');
+                                                    sel.classList.add('fa-solid', 'fa-fw');
+                                                    sel.classList.add('fa-angles-right');
+                                                    sel.title = 'Switch to this swipe';
+                                                    sel.addEventListener('click', async()=>{
+                                                        const oldSwipe = this.swipe;
+                                                        this.swipeIndex = this.swipeList.indexOf(swipe);
+                                                        this.updateRender(oldSwipe.data);
+                                                        this.onSwipe(oldSwipe);
+                                                        this.onChange();
+                                                        dlg.completeAffirmative();
+                                                    });
+                                                    actions.append(sel);
+                                                }
+                                                const del = document.createElement('div'); {
+                                                    del.classList.add('stac--action');
+                                                    del.classList.add('menu_button');
+                                                    del.classList.add('fa-solid', 'fa-fw');
+                                                    del.classList.add('fa-trash-can');
+                                                    del.title = 'Delete branch (swipe and follow-up messages)';
+                                                    del.addEventListener('click', async()=>{
+                                                        if (this.swipeList.length < 2) return;
+                                                        const oldSwipe = this.swipe;
+                                                        const idx = this.swipeList.indexOf(swipe);
+                                                        this.swipeList.splice(idx, 1);
+                                                        if (this.swipeIndex > idx) this.swipeIndex--;
+                                                        else if (this.swipeIndex == idx) {
+                                                            if (this.swipeList.length > this.swipeIndex) {
+                                                            // swipes to the right available, switch to next swipe
+                                                            } else {
+                                                                this.swipeIndex--;
+                                                            }
+                                                        }
+                                                        this.updateRender(oldSwipe.data);
+                                                        this.onSwipe(oldSwipe);
+                                                        this.onChange();
+                                                        branch.remove();
+                                                    });
+                                                    actions.append(del);
+                                                }
+                                                branch.append(actions);
+                                            }
+                                            const messages = document.createElement('div'); {
+                                                messages.classList.add('stac--messages');
+                                                let s = swipe;
+                                                while (s) {
+                                                    const mes = document.createElement('div'); {
+                                                        mes.classList.add('stac--message');
+                                                        mes.classList.add(`stac--${s.isUser ? 'user' : 'bot'}`);
+                                                        mes.classList.add('mes');
+                                                        const actions = document.createElement('div'); {
+                                                            actions.classList.add('stac--actions');
+                                                            const fold = document.createElement('div'); {
+                                                                fold.classList.add('stac--action');
+                                                                fold.classList.add('menu_button');
+                                                                fold.classList.add('fa-solid', 'fa-fw');
+                                                                fold.classList.add('fa-caret-down');
+                                                                fold.title = 'Collapse messages';
+                                                                fold.addEventListener('click', ()=>mes.classList.toggle('stac--collapsed'));
+                                                                actions.append(fold);
+                                                            }
+                                                            mes.append(actions);
+                                                        }
+                                                        const txt = document.createElement('div'); {
+                                                            txt.classList.add('stac--content');
+                                                            txt.classList.add('mes_text');
+                                                            txt.innerHTML = messageFormatting(s.text, s.name, s.isSystem, s.isUser, -1);
+                                                            mes.append(txt);
+                                                        }
+                                                        messages.append(mes);
+                                                    }
+                                                    s = s.next?.swipe;
+                                                }
+                                                branch.append(messages);
+                                            }
+                                            dom.append(branch);
+                                        }
+                                    }
+                                }
+                                const dlg = new Popup(dom, POPUP_TYPE.TEXT);
+                                await dlg.show();
+                            });
                             actions.append(swipes);
                         }
                         const swipeRight = document.createElement('div'); {
