@@ -166,6 +166,9 @@
 		overflow-x: clip;
 		overflow-y: auto;
 		// padding-top: 1.5em;
+		&:has(.stac--delMenu) .stac--message:not(:has(.stac--delMenu)) {
+			z-index: -1;
+		}
 		> .stac--message {
 			padding: 0 10px;
 			width: auto;
@@ -295,9 +298,11 @@
 	position: absolute;
 	&.stac--up {
 		bottom: 100%;
+		transform-origin: center bottom;
 	}
 	&.stac--down {
 		top: 100%;
+		transform-origin: center top;
 	}
     right: 0;
 	transition: 200ms;
@@ -323,7 +328,7 @@
 		&:hover {
 			filter: saturate(1);
 		}
-		&.stac--deleteMessage {
+		&.stac--DELETE_MESSAGE {
 			:nth-child(2) {
 				animation-name: stac--del-mes-target;
 				animation-duration: 2400ms;
@@ -339,7 +344,7 @@
 				animation-iteration-count: infinite;
 			}
 		}
-		&.stac--deleteBranch {
+		&.stac--DELETE_BRANCH {
 			:nth-child(n+2) {
 				animation-name: stac--del-mes-target;
 				animation-duration: 2400ms;
@@ -348,7 +353,7 @@
 				animation-iteration-count: infinite;
 			}
 		}
-		&.stac--deleteSwipe {
+		&.stac--DELETE_SWIPE {
 			:nth-child(n+2) {
 				animation-name: stac--del-mes-target-return;
 				animation-duration: 2400ms;

@@ -148,6 +148,9 @@
   overflow-x: clip;
   overflow-y: auto;
 }
+.stac--panel .stac--messages:has(.stac--delMenu) .stac--message:not(:has(.stac--delMenu)) {
+  z-index: -1;
+}
 .stac--panel .stac--messages > .stac--message {
   padding: 0 10px;
   width: auto;
@@ -275,9 +278,11 @@
 }
 .stac--delMenu.stac--up {
   bottom: 100%;
+  transform-origin: center bottom;
 }
 .stac--delMenu.stac--down {
   top: 100%;
+  transform-origin: center top;
 }
 .stac--delMenu.stac--active {
   scale: 1;
@@ -299,28 +304,28 @@
 .stac--delMenu .stac--item:hover {
   filter: saturate(1);
 }
-.stac--delMenu .stac--item.stac--deleteMessage :nth-child(2) {
+.stac--delMenu .stac--item.stac--DELETE_MESSAGE :nth-child(2) {
   animation-name: stac--del-mes-target;
   animation-duration: 2400ms;
   animation-timing-function: linear;
   animation-delay: 0s;
   animation-iteration-count: infinite;
 }
-.stac--delMenu .stac--item.stac--deleteMessage :nth-child(n+3) {
+.stac--delMenu .stac--item.stac--DELETE_MESSAGE :nth-child(n+3) {
   animation-name: stac--del-mes-follow;
   animation-duration: 2400ms;
   animation-timing-function: linear;
   animation-delay: 0s;
   animation-iteration-count: infinite;
 }
-.stac--delMenu .stac--item.stac--deleteBranch :nth-child(n+2) {
+.stac--delMenu .stac--item.stac--DELETE_BRANCH :nth-child(n+2) {
   animation-name: stac--del-mes-target;
   animation-duration: 2400ms;
   animation-timing-function: linear;
   animation-delay: 0s;
   animation-iteration-count: infinite;
 }
-.stac--delMenu .stac--item.stac--deleteSwipe :nth-child(n+2) {
+.stac--delMenu .stac--item.stac--DELETE_SWIPE :nth-child(n+2) {
   animation-name: stac--del-mes-target-return;
   animation-duration: 2400ms;
   animation-timing-function: linear;

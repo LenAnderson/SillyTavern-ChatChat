@@ -2,7 +2,9 @@ import { messageFormatting } from '../../../../../script.js';
 import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay } from '../../../../utils.js';
+import { settings } from '../index.js';
 import { waitForFrame } from './lib/wait.js';
+import { DELETE_ACTION } from './Settings.js';
 
 
 
@@ -296,7 +298,7 @@ export class Message {
             if (this.isUser) {
                 // add empty swipe and open editor
                 const oldSwipe = this.swipe;
-                this.addTextSwipe('');
+                this.addTextSwipe(this.swipe.text);
                 this.swipe.isUser = true;
                 this.updateRender(oldSwipe.data);
                 this.onSwipe(oldSwipe);
@@ -400,8 +402,9 @@ export class Message {
                         actions.classList.add('stac--actions');
                         const del = document.createElement('div'); {
                             del.classList.add('stac--action');
+                            del.classList.add('stac--delete');
                             del.classList.add('fa-solid', 'fa-trash-can');
-                            del.title = 'Show delete menu';
+                            del.title = settings.deleteAction;
                             let delMenu;
                             const hideDelMenu = async()=>{
                                 delMenu.classList.remove('stac--active');
@@ -409,7 +412,7 @@ export class Message {
                                 delMenu.remove();
                                 delMenu = null;
                             };
-                            del.addEventListener('click', async(evt)=>{
+                            const showDelMenu = async()=>{
                                 if (delMenu) {
                                     await hideDelMenu();
                                     return;
@@ -417,51 +420,20 @@ export class Message {
                                 const menu = document.createElement('div'); {
                                     delMenu = menu;
                                     menu.classList.add('stac--delMenu');
-                                    // if (actions.getBoundingClientRect().top > window.innerHeight / 2) {
-                                    //     menu.classList.add('stac--up');
-                                    // } else {
-                                    //     menu.classList.add('stac--down');
-                                    // }
-                                    menu.classList.add('stac--down');
-                                    const tt = {
-                                        'deleteMessage': 'Delete message and swipes',
-                                        'deleteBranch': 'Delete branch (message, swipes, and following messages)',
-                                        'deleteSwipe': 'Delete swipe and following messages',
-                                    };
+                                    if (actions.getBoundingClientRect().top > window.innerHeight / 2) {
+                                        menu.classList.add('stac--up');
+                                    } else {
+                                        menu.classList.add('stac--down');
+                                    }
                                     const src = [this.isUser ? 'user' : 'bot', this.isUser ? 'bot' : 'user'];
-                                    for (const t of ['deleteMessage', 'deleteBranch', 'deleteSwipe']) {
+                                    for (const t of Object.entries(DELETE_ACTION).filter(it=>it[1] != DELETE_ACTION.SHOW_MENU)) {
                                         const opt = document.createElement('div'); {
                                             opt.classList.add('stac--item');
-                                            opt.classList.add(`stac--${t}`);
-                                            opt.title = tt[t];
+                                            opt.classList.add(`stac--${t[0]}`);
+                                            opt.title = t[1];
                                             opt.addEventListener('click', ()=>{
                                                 hideDelMenu();
-                                                switch (t) {
-                                                    case 'deleteMessage': {
-                                                        this.onDelete(false);
-                                                        this.renderOut();
-                                                        break;
-                                                    }
-                                                    case 'deleteBranch': {
-                                                        this.onDelete(true);
-                                                        this.renderOut();
-                                                        break;
-                                                    }
-                                                    case 'deleteSwipe': {
-                                                        if (this.swipeList.length < 2) return;
-                                                        const oldSwipe = this.swipe;
-                                                        this.swipeList.splice(this.swipeIndex, 1);
-                                                        if (this.swipeList.length > this.swipeIndex) {
-                                                            // swipes to the right available, switch to next swipe
-                                                        } else {
-                                                            this.swipeIndex--;
-                                                        }
-                                                        this.updateRender(oldSwipe.data);
-                                                        this.onSwipe(oldSwipe);
-                                                        this.onChange();
-                                                        break;
-                                                    }
-                                                }
+                                                performDelete(t[1]);
                                             });
                                             for (const idx of [1, 2, 3, 4]) {
                                                 const m = document.createElement('div'); {
@@ -476,6 +448,50 @@ export class Message {
                                     await waitForFrame();
                                     menu.classList.add('stac--active');
                                 }
+                            };
+                            const performDelete = (da)=>{
+                                switch (da) {
+                                    case DELETE_ACTION.DELETE_MESSAGE: {
+                                        this.onDelete(false);
+                                        this.renderOut();
+                                        break;
+                                    }
+                                    case DELETE_ACTION.DELETE_BRANCH: {
+                                        this.onDelete(true);
+                                        this.renderOut();
+                                        break;
+                                    }
+                                    case DELETE_ACTION.DELETE_SWIPE: {
+                                        if (this.swipeList.length < 2) return;
+                                        const oldSwipe = this.swipe;
+                                        this.swipeList.splice(this.swipeIndex, 1);
+                                        if (this.swipeList.length > this.swipeIndex) {
+                                            // swipes to the right available, switch to next swipe
+                                        } else {
+                                            this.swipeIndex--;
+                                        }
+                                        this.updateRender(oldSwipe.data);
+                                        this.onSwipe(oldSwipe);
+                                        this.onChange();
+                                        break;
+                                    }
+                                }
+                            };
+                            del.addEventListener('click', async(evt)=>{
+                                switch (settings.deleteAction) {
+                                    case DELETE_ACTION.SHOW_MENU: {
+                                        showDelMenu();
+                                        break;
+                                    }
+                                    default: {
+                                        performDelete(settings.deleteAction);
+                                        break;
+                                    }
+                                }
+                            });
+                            del.addEventListener('contextmenu', async(evt)=>{
+                                evt.preventDefault();
+                                showDelMenu();
                             });
                             actions.append(del);
                         }

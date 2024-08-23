@@ -13,7 +13,7 @@ import { Settings, STORY_POSITION, WIDTH_TYPE } from './src/Settings.js';
 
 
 /**@type {Settings} */
-let settings;
+export let settings;
 
 
 function isRole(mes, roles) {

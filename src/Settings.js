@@ -24,6 +24,14 @@ export const STORY_POSITION = {
     BEFORE_CHAT: 'before chat',
     IN_CHAT: 'in chat',
 };
+/** @readonly */
+/** @enum {string?} */
+export const DELETE_ACTION = {
+    SHOW_MENU: 'Show menu',
+    DELETE_MESSAGE: 'Delete message and swipes',
+    DELETE_BRANCH: 'Delete branch (message, swipes, and following messages)',
+    DELETE_SWIPE: 'Delete swipe and following messages',
+};
 
 export class Settings {
     // global settings
@@ -31,6 +39,7 @@ export class Settings {
     /**@type {WIDTH_TYPE} */ widthType = WIDTH_TYPE.ASIDE;
     /**@type {number} */ width = 0.5;
     /**@type {number} */ maxInputHistory = 100;
+    /**@type {DELETE_ACTION} */ deleteAction = DELETE_ACTION.SHOW_MENU;
     /**@type {string} */ userColorBg = 'rgba(120, 120, 120, 0.75)';
     /**@type {string} */ userColorText = 'rgba(255, 255, 255, 1)';
     /**@type {string} */ userColorBgHeader = 'rgba(120, 120, 120, 0.5)';
@@ -141,6 +150,33 @@ export class Settings {
                     onChange: (it)=>{
                         this.width = it.value;
                         /**@type {HTMLElement}*/(document.querySelector('.stac--panel')).style.setProperty('--width', this.width.toString());
+                        this.save();
+                    },
+                }));
+                this.settingList.push(NumberSetting.fromProps({ id: 'stac--maxInputHistory',
+                    name: 'Input History Length',
+                    description: 'Number of items to keep in the chat input history.',
+                    category: ['Global', 'General'],
+                    initialValue: this.maxInputHistory,
+                    min: 1,
+                    max: 9999,
+                    step: 1,
+                    onChange: (it)=>{
+                        this.maxInputHistory = it.value;
+                        this.save();
+                    },
+                }));
+                this.settingList.push(SelectSetting.fromProps({ id: 'stac--deleteAction',
+                    name: 'Default Delete Action',
+                    description: 'Action to perform when clicking on a message\'s delete button.<br>You can always right-click to open or close the delete menu.',
+                    category: ['Global', 'General'],
+                    initialValue: this.deleteAction,
+                    optionList: Object.entries(DELETE_ACTION).map(it=>({ value:it[1], label:it[1] })),
+                    onChange: (it)=>{
+                        this.deleteAction = it.value;
+                        for (const el of /**@type {NodeListOf<HTMLElement>}*/(document.querySelectorAll('.stac--panel .stac--message .stac--actions .stac--action.stac--delete'))) {
+                            el.title = it.value;
+                        }
                         this.save();
                     },
                 }));
@@ -339,6 +375,8 @@ export class Settings {
             fontSize: this.fontSize,
             widthType: this.widthType,
             width: this.width,
+            maxInputHistory: this.maxInputHistory,
+            deleteAction: this.deleteAction,
             userColorBg: this.userColorBg,
             userColorText: this.userColorText,
             userColorBgHeader: this.userColorBgHeader,
