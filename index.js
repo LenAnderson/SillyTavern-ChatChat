@@ -244,20 +244,62 @@ const send = async(text)=>{
 const getSections = (history)=>{
     history ??= chat;
     const story = history.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
-    const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true })
-    const sections = [];
-    const sectionIndex = [0];
-    while (sections.length) sections.pop();
-    while (sectionIndex.length > 1) sectionIndex.pop();
+    const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
+    const sectionIndex = [{ anchor:'', index:0, text:'' }];
+    let prev = sectionIndex[0];
+    let empties = [];
     for (const sep of settings.sectionList) {
-        const lastIdx = sectionIndex.slice(-1)[0];
-        const remaining = storyText.slice(lastIdx);
+        const lastIdx = sectionIndex.filter((it,i,list)=>i == 0 || it.index > list[i - 1].index).slice(-1)[0];
+        const remaining = storyText.slice(lastIdx.index);
         const idx = remaining.indexOf(sep);
-        sectionIndex.push(lastIdx + idx);
-        sections.push(storyText.slice(...sectionIndex.slice(-2)));
+        const absIdx = lastIdx.index + idx;
+        if (idx > -1) {
+            prev.text = storyText.slice(
+                sectionIndex
+                    .filter((it,i,list)=>i == 0 || it.index > list[i - 1].index)
+                    .slice(-1)[0].index,
+                absIdx,
+            );
+            while (empties.length) {
+                const e = empties.pop();
+                e.index = absIdx;
+            }
+            const item = {
+                anchor: sep,
+                index: absIdx,
+                text: '',
+            };
+            sectionIndex.push(item);
+            prev = item;
+        } else {
+            const item = { anchor:sep, index:-1, text:'' };
+            sectionIndex.push(item);
+            empties.push(item);
+        }
     }
-    sections.push(storyText.slice(sectionIndex.slice(-1)[0]));
-    return sections;
+    prev.text = storyText.slice(
+        sectionIndex
+            .filter((it,i,list)=>i == 0 || it.index > list[i - 1].index)
+            .slice(-1)[0].index,
+    );
+    while (empties.length) {
+        const e = empties.pop();
+        e.index = prev.index;
+    }
+    // if (prevEmpty) {
+    //     sections.push({ anchor:'', text:storyText.slice(sectionIndex.slice(-1)[0]) });
+    //     while (empties.length) {
+    //         const sep = empties.pop();
+    //         sections.push({ anchor:sep, text:'' });
+    //     }
+    // } else {
+    //     while (empties.length) {
+    //         const sep = empties.pop();
+    //         sections.push({ anchor:sep, text:'' });
+    //     }
+    //     sections.push({ anchor:prevSep, text:storyText.slice(sectionIndex.slice(-1)[0]) });
+    // }
+    return sectionIndex;
 };
 
 /**
@@ -290,9 +332,9 @@ const gen = async(history, userText, bm)=>{
     const sections = getSections(chat);
     let story = '';
     if (sections.length == 1) {
-        story = sections[0];
+        story = sections[0].text;
     } else if (sections.length > 1) {
-        story = sections.map((it,idx)=>`<Section-${idx + 1}>\n${it}\n</Section-${idx + 1}>`).join('\n');
+        story = sections.map((it,idx)=>`<Section-${idx + 1}>\n${it.text}\n</Section-${idx + 1}>`).join('\n');
     }
     for (const mes of chat) {
         //TODO use getTokenCountAsync('...') to limit tokens
@@ -699,7 +741,7 @@ const init = async()=>{
                     sections = getSections();
                     domSectionPanel.innerHTML = '';
                     let idx = 0;
-                    for (const storySection of sections) {
+                    for (const { anchor, text:storySection } of sections) {
                         idx++;
                         const segs = [...seg.segment(storySection)].map(it=>it.segment);
                         const first = document.createElement('div'); {
@@ -710,6 +752,7 @@ const init = async()=>{
                                     title.classList.add('stac--title');
                                     if (sections.length > 1) {
                                         title.textContent = `<Section-${idx}>`;
+                                        title.title = `anchor: ${anchor}`;
                                     }
                                     head.append(title);
                                 }
