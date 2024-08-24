@@ -59,6 +59,7 @@ export class Settings {
     /**@type {number} */ storyDepth = 1;
     /**@type {string} */ character;
     /**@type {string[]} */ inputHistory = [];
+    /**@type {string[]} */ sectionList = [];
 
     /**@type {BaseSetting[]}*/ settingList = [];
 
@@ -400,6 +401,7 @@ export class Settings {
                 character: this.character,
                 maxInputHistory: this.maxInputHistory,
                 inputHistory: this.inputHistory,
+                sectionList: this.sectionList,
             };
             saveMetadataDebounced();
         }

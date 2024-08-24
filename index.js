@@ -1,8 +1,10 @@
 import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, sendMessageAsUser, setExtensionPrompt, system_message_types, this_chid } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
+import { Popup, POPUP_TYPE } from '../../../popup.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
 import { SlashCommand } from '../../../slash-commands/SlashCommand.js';
 import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
+import { getTokenCountAsync } from '../../../tokenizers.js';
 import { delay } from '../../../utils.js';
 import { getRegexedString, regex_placement } from '../../regex/engine.js';
 import { groupId } from '../SillyTavern-TriggerCards/index.js';
@@ -98,6 +100,8 @@ const dom = {
     /**@type {HTMLElement} */
     panel: undefined,
     /**@type {HTMLElement} */
+    head: undefined,
+    /**@type {HTMLElement} */
     messages: undefined,
     /**@type {HTMLElement} */
     form: undefined,
@@ -159,7 +163,50 @@ const onChatChanged = async()=>{
         document.body.classList.remove('stac--nochat');
     }
 };
+const updateHeadLoop = async()=>{
+    let oldText;
+    while (true) {
+        const story = chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
+        const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true })
+        if (oldText != storyText) {
+            updateHead(story, storyText);
+            oldText = storyText;
+        }
+        await delay(500);
+    }
+};
+const updateHead = async(story, storyText)=>{
+    const seg = new Intl.Segmenter('en', { granularity:'sentence' });
+    dom.head.innerHTML = '';
+    story ??= chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
+    storyText ??= getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true })
+    const first = getRegexedString(story[0].mes, regex_placement.AI_OUTPUT, { isPrompt: true });
+    const last = getRegexedString(story.slice(-1)[0].mes, regex_placement.AI_OUTPUT, { isPrompt: true });
+    if (story.length > 0) {
+        const start = document.createElement('div'); {
+            start.classList.add('stac--start');
+            start.textContent = first;
+            dom.head.append(start);
+        }
+        const end = document.createElement('div'); {
+            end.classList.add('stac--end');
+            end.textContent = last;
+            end.innerHTML += '&lrm;';
+            dom.head.append(end);
+        }
+    }
+    const segFirst = [...seg.segment(first)];
+    const segLast = [...seg.segment(last)];
+    dom.head.title = [
+        `Story: Message #${0} to #${chat.length - 1}  (~${await getTokenCountAsync(storyText)} tokens) | ${settings.sectionList.length ? `${settings.sectionList.length + 1} sections` : null}`,
+        '---',
+        segFirst.slice(0, 4).map(it=>it.segment.trim()).join(' '),
+        '[...]',
+        segLast.slice(-4).map(it=>it.segment.trim()).join(' '),
+    ].filter(it=>it).join('\n');
+};
 const reloadChat = async()=>{
+    updateHead();
     currentChat.render(dom.messages);
 };
 const send = async(text)=>{
@@ -194,6 +241,25 @@ const send = async(text)=>{
     save();
 };
 
+const getSections = (history)=>{
+    history ??= chat;
+    const story = history.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
+    const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true })
+    const sections = [];
+    const sectionIndex = [0];
+    while (sections.length) sections.pop();
+    while (sectionIndex.length > 1) sectionIndex.pop();
+    for (const sep of settings.sectionList) {
+        const lastIdx = sectionIndex.slice(-1)[0];
+        const remaining = storyText.slice(lastIdx);
+        const idx = remaining.indexOf(sep);
+        sectionIndex.push(lastIdx + idx);
+        sections.push(storyText.slice(...sectionIndex.slice(-2)));
+    }
+    sections.push(storyText.slice(sectionIndex.slice(-1)[0]));
+    return sections;
+};
+
 /**
  *
  * @param {Message[]} history
@@ -220,13 +286,17 @@ const gen = async(history, userText, bm)=>{
     `;
     document.body.append(style);
     const chatClone = structuredClone(chat);
-    const story = [];
+    // const story = [];
+    const sections = getSections(chat);
+    let story = '';
+    if (sections.length == 1) {
+        story = sections[0];
+    } else if (sections.length > 1) {
+        story = sections.map((it,idx)=>`<Section-${idx + 1}>\n${it}\n</Section-${idx + 1}>`).join('\n');
+    }
     for (const mes of chat) {
         //TODO use getTokenCountAsync('...') to limit tokens
         if (mes.is_system) continue;
-        if (isRole(mes, ['assistant'])) {
-            story.push(getRegexedString(mes.mes, regex_placement.AI_OUTPUT, { isPrompt: true }));
-        }
         mes.is_system = true;
     }
     settings.injectList.forEach(({ text, type, depth, scan, role },idx)=>setExtensionPrompt(
@@ -239,7 +309,7 @@ const gen = async(history, userText, bm)=>{
     ));
     setExtensionPrompt(
         'chatchat-content',
-        `<story>${story.join('\n')}</story>`,
+        `<Story>${story}</Story>`,
         extension_prompt_types.IN_CHAT,
         settings.storyPosition == STORY_POSITION.BEFORE_CHAT ? history.length + 2 : settings.storyDepth,
         true,
@@ -615,7 +685,160 @@ const init = async()=>{
         dom.panel = panel;
         panel.classList.add('stac--panel');
         const head = document.createElement('div'); {
+            dom.head = head;
             head.classList.add('stac--head');
+            head.addEventListener('click', async()=>{
+                const story = chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
+                const storyTexts = story.map(it=>getRegexedString(it.mes, regex_placement.AI_OUTPUT, { isPrompt: true }));
+                const storyText = storyTexts.join('\n');
+                const seg = new Intl.Segmenter('en', { granularity:'sentence' });
+                const storySegs = storyTexts.map(it=>[...seg.segment(it)].map(s=>s.segment));
+                let sections = [];
+                let domSectionPanel;
+                const updateSectionPanel = async()=>{
+                    sections = getSections();
+                    domSectionPanel.innerHTML = '';
+                    let idx = 0;
+                    for (const storySection of sections) {
+                        idx++;
+                        const segs = [...seg.segment(storySection)].map(it=>it.segment);
+                        const first = document.createElement('div'); {
+                            first.classList.add('stac--section');
+                            const head = document.createElement('div'); {
+                                head.classList.add('stac--details');
+                                const title = document.createElement('div'); {
+                                    title.classList.add('stac--title');
+                                    if (sections.length > 1) {
+                                        title.textContent = `<Section-${idx}>`;
+                                    }
+                                    head.append(title);
+                                }
+                                const info = document.createElement('div'); {
+                                    info.classList.add('stac--info');
+                                    info.textContent = `${segs.length} sentences (~${await getTokenCountAsync(storySection)} tokens)`;
+                                    head.append(info);
+                                }
+                                const actions = document.createElement('div'); {
+                                    actions.classList.add('stac--actions');
+                                    const del = document.createElement('div'); {
+                                        del.classList.add('stac--action');
+                                        del.classList.add('fa-solid', 'fa-fw');
+                                        del.classList.add('fa-trash-can');
+                                        del.title = 'Remove section';
+                                        del.addEventListener('click', ()=>{
+                                            if (settings.sectionList.includes(segs[0].trim())) {
+                                                settings.sectionList.splice(settings.sectionList.indexOf(segs[0].trim()), 1);
+                                                settings.save();
+                                            }
+                                            updateSectionPanel();
+                                        });
+                                        actions.append(del);
+                                    }
+                                    head.append(actions);
+                                }
+                                first.append(head);
+                            }
+                            const start = document.createElement('div'); {
+                                start.classList.add('stac--start');
+                                const anchor = document.createElement('span'); {
+                                    anchor.classList.add('stac--anchor');
+                                    anchor.textContent = segs[0];
+                                    start.append(anchor);
+                                }
+                                for (const s of segs.slice(1, 4)) {
+                                    const segment = document.createElement('span'); {
+                                        segment.classList.add('stac--segment');
+                                        segment.textContent = s;
+                                        start.append(segment);
+                                    }
+                                }
+                                first.append(start);
+                            }
+                            const dots = document.createElement('div'); {
+                                dots.classList.add('stac--dots');
+                                dots.textContent = '[...]';
+                                first.append(dots);
+                            }
+                            const end = document.createElement('div'); {
+                                end.classList.add('stac--end');
+                                for (const s of segs.slice(-5)) {
+                                    const segment = document.createElement('span'); {
+                                        segment.classList.add('stac--segment');
+                                        segment.textContent = s;
+                                        end.append(segment);
+                                    }
+                                }
+                                first.append(end);
+                            }
+                            domSectionPanel.append(first);
+                        }
+                    }
+                };
+                const dom = document.createElement('div'); {
+                    dom.classList.add('stac--storyDlg');
+                    const storyPanel = document.createElement('div'); {
+                        storyPanel.classList.add('stac--col');
+                        storyPanel.classList.add('stac--story');
+                        storyPanel.classList.add('mes');
+                        for (const mes of storySegs) {
+                            const m = document.createElement('div'); {
+                                m.classList.add('stac--message');
+                                m.classList.add('mes_text');
+                                let q = false;
+                                let prev;
+                                for (const s of mes) {
+                                    const segment = document.createElement('span'); {
+                                        segment.classList.add('stac--segment');
+                                        const qParts = s.split('"');
+                                        let idx = 0;
+                                        for (const qp of qParts) {
+                                            let qNew = q;
+                                            if (idx > 0) qNew = !q;
+                                            if (prev && q && !qNew) prev.textContent += '"';
+                                            const el = document.createElement(qNew ? 'q' : 'span'); {
+                                                el.textContent = `${qNew && !q ? '"' : ''}${qp}`;
+                                                segment.append(el);
+                                            }
+                                            prev = el;
+                                            q = qNew;
+                                            idx++;
+                                        }
+                                        segment.addEventListener('click', ()=>{
+                                            if (settings.sectionList.includes(s.trim())) {
+                                                settings.sectionList.splice(settings.sectionList.indexOf(s.trim()), 1);
+                                            } else {
+                                                const idxList = settings.sectionList.map(it=>storyText.indexOf(it));
+                                                const idx = storyText.indexOf(s.trim());
+                                                const insertIdx = idxList.findIndex(it=>it > idx);
+                                                if (idx == -1) settings.sectionList.push(s.trim());
+                                                else settings.sectionList.splice(insertIdx, 0, s.trim());
+                                            }
+                                            settings.save();
+                                            updateSectionPanel();
+                                        });
+                                        m.append(segment);
+                                    }
+                                }
+                                storyPanel.append(m);
+                            }
+                        }
+                        dom.append(storyPanel);
+                    }
+                    const sectionPanel = document.createElement('div'); {
+                        domSectionPanel = sectionPanel;
+                        sectionPanel.classList.add('stac--col');
+                        sectionPanel.classList.add('stac--sections');
+                        updateSectionPanel();
+                        dom.append(sectionPanel);
+                    }
+                    // const previewPanel = document.createElement('div'); {
+                    //     previewPanel.classList.add('stac--col');
+                    //     dom.append(previewPanel);
+                    // }
+                }
+                const dlg = new Popup(dom, POPUP_TYPE.TEXT);
+                await dlg.show();
+            });
             panel.append(head);
         }
         const messages = document.createElement('div'); {
@@ -701,6 +924,8 @@ const init = async()=>{
     panel.style.setProperty('--botColorTextHeader', settings.botColorTextHeader.toString());
     onChatChanged();
     eventSource.on(event_types.CHAT_CHANGED, ()=>(onChatChanged(), null));
+
+    updateHeadLoop();
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-setinput',
         callback: (args, value)=>{

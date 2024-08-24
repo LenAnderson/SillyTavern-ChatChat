@@ -203,183 +203,183 @@
 				}
 			}
 		}
-	}
-}
 
-.stac--avatar {
-	position: absolute;
-    top: -1.4em;
-    left: -1.25em;
-    height: 2.75em;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    border-radius: 50%;
-}
-.stac--avatarImg {
-	height: 100%;
-	aspect-ratio: 1 / 1;
-	object-fit: cover;
-	object-position: top center;
-}
+		.stac--avatar {
+			position: absolute;
+			top: -1.4em;
+			left: -1.25em;
+			height: 2.75em;
+			aspect-ratio: 1 / 1;
+			overflow: hidden;
+			border-radius: 50%;
+		}
+		.stac--avatarImg {
+			height: 100%;
+			aspect-ratio: 1 / 1;
+			object-fit: cover;
+			object-position: top center;
+		}
 
-.stac--details {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
+		.stac--user .stac--details {
+			background-color: var(--userColorBgHeader);
+			color: var(--userColorTextHeader);
+			margin-left: -10px;
+			padding-left: 10px;
+		}
+		.stac--details {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
 
-	background-color: var(--botColorBgHeader);
-    border-bottom: 1px solid black;
-    border-radius: 10px 10px 0 0;
-	color: var(--botColorTextHeader);
-    margin: 0 -10px 0 calc(1.25em - 10px);
-    padding: 0 10px 0 calc(9.5px + 1.25em);
-	position: sticky;
-	top: 0;
-	z-index: 1;
-	.stac--user & {
-		background-color: var(--userColorBgHeader);
-		color: var(--userColorTextHeader);
-		margin-left: -10px;
-		padding-left: 10px;
-	}
-	.stac--date {
-		font-size: 0.75em;
-		opacity: 0.5;
-	}
-	.stac--actions {
-		font-size: 0.75em;
-		display: flex;
-		gap: 0.5em;
-		position: relative;
-	}
-	.stac--info {
-		margin: 0 -0.5em;
-		opacity: 0.5;
-		&.stac--swipesCount {
+			background-color: var(--botColorBgHeader);
+			border-bottom: 1px solid black;
+			border-radius: 10px 10px 0 0;
+			color: var(--botColorTextHeader);
+			margin: 0 -10px 0 calc(1.25em - 10px);
+			padding: 0 10px 0 calc(9.5px + 1.25em);
+			position: sticky;
+			top: 0;
+			z-index: 1;
+			.stac--date {
+				font-size: 0.75em;
+				opacity: 0.5;
+			}
+			.stac--actions {
+				font-size: 0.75em;
+				display: flex;
+				gap: 0.5em;
+				position: relative;
+			}
+			.stac--info {
+				margin: 0 -0.5em;
+				opacity: 0.5;
+				&.stac--swipesCount {
+					transition: 200ms;
+					cursor: pointer;
+					&:hover {
+						opacity: 1;
+					}
+				}
+			}
+			.stac--action {
+				aspect-ratio: 1 / 1;
+				text-align: center;
+				height: calc(4px + 1.2lh);
+				padding: 2px;
+				opacity: 0.5;
+				transition: 200ms;
+				cursor: pointer;
+				&:hover {
+					opacity: 1;
+				}
+				&.stac--success {
+					background-color: rgb(81, 163, 81);
+					opacity: 1;
+				}
+				&.stac--failure {
+					background-color: rgb(189, 54, 47);
+					opacity: 1;
+				}
+			}
+		}
+
+		.stac--delMenu {
+			filter: drop-shadow(1px 1px 2px var(--black50a));
+			z-index: 30000;
+			border-radius: 10px;
+			padding: 0.5em;
+			display: flex;
+			flex-direction: row;
+			gap: 0.5em;
+			backdrop-filter: blur(10px);
+
+			position: absolute;
+			&.stac--up {
+				bottom: 100%;
+				transform-origin: center bottom;
+			}
+			&.stac--down {
+				top: 100%;
+				transform-origin: center top;
+			}
+			right: 0;
 			transition: 200ms;
-			cursor: pointer;
-			&:hover {
-				opacity: 1;
+			transform-origin: center top;
+			scale: 0;
+			&.stac--active {
+				scale: 1;
 			}
-		}
-	}
-	.stac--action {
-		aspect-ratio: 1 / 1;
-		text-align: center;
-		height: calc(4px + 1.2lh);
-		padding: 2px;
-		opacity: 0.5;
-		transition: 200ms;
-		cursor: pointer;
-		&:hover {
-			opacity: 1;
-		}
-		&.stac--success {
-			background-color: rgb(81, 163, 81);
-			opacity: 1;
-		}
-		&.stac--failure {
-			background-color: rgb(189, 54, 47);
-			opacity: 1;
-		}
-	}
-}
-
-.stac--delMenu {
-	filter: drop-shadow(1px 1px 2px var(--black50a));
-    z-index: 30000;
-    border-radius: 10px;
-    padding: 0.5em;
-    display: flex;
-	flex-direction: row;
-	gap: 0.5em;
-	backdrop-filter: blur(10px);
-
-	position: absolute;
-	&.stac--up {
-		bottom: 100%;
-		transform-origin: center bottom;
-	}
-	&.stac--down {
-		top: 100%;
-		transform-origin: center top;
-	}
-    right: 0;
-	transition: 200ms;
-	transform-origin: center top;
-	scale: 0;
-	&.stac--active {
-		scale: 1;
-	}
-	.stac--item {
-		border: 1px solid var(--SmartThemeBorderColor);
-		border-radius: 4px;
-		// height: 12em;
-		width: 6em;
-		display: flex;
-		flex-direction: column;
-		gap: 0.6em;
-		padding: 0.5em;
-		overflow: hidden;
-		background-color: var(--secondaryBg, var(--SmartThemeBlurTintColor));
-		filter: saturate(0);
-		transition: 200ms;
-		cursor: pointer;
-		&:hover {
-			filter: saturate(1);
-		}
-		&.stac--DELETE_MESSAGE {
-			:nth-child(2) {
-				animation-name: stac--del-mes-target;
-				animation-duration: 2400ms;
-				animation-timing-function: linear;
-				animation-delay: 0s;
-				animation-iteration-count: infinite;
-			}
-			:nth-child(n+3) {
-				animation-name: stac--del-mes-follow;
-				animation-duration: 2400ms;
-				animation-timing-function: linear;
-				animation-delay: 0s;
-				animation-iteration-count: infinite;
-			}
-		}
-		&.stac--DELETE_BRANCH {
-			:nth-child(n+2) {
-				animation-name: stac--del-mes-target;
-				animation-duration: 2400ms;
-				animation-timing-function: linear;
-				animation-delay: 0s;
-				animation-iteration-count: infinite;
-			}
-		}
-		&.stac--DELETE_SWIPE {
-			:nth-child(n+2) {
-				animation-name: stac--del-mes-target-return;
-				animation-duration: 2400ms;
-				animation-timing-function: linear;
-				animation-delay: 0s;
-				animation-iteration-count: infinite;
-			}
-		}
-		> div {
-			border-radius: 3px;
-			height: 2em;
-			border-top-width: 5px;
-			border-top-style: solid;
-			box-shadow: 1px 2px 2px rgb(0 0 0 / 50%);
-			position: relative;
-			&.stac--user {
-				margin-left: 1em;
-				background-color: var(--userColorBg);
-				border-top-color: var(--userColorBgHeader);
-				color: var(--userColorText);
-			}
-			&.stac--bot {
-				margin-right: 1em;
-				background-color: var(--botColorBg);
-				border-top-color: var(--botColorBgHeader);
-				color: var(--botColorText);
+			.stac--item {
+				border: 1px solid var(--SmartThemeBorderColor);
+				border-radius: 4px;
+				// height: 12em;
+				width: 6em;
+				display: flex;
+				flex-direction: column;
+				gap: 0.6em;
+				padding: 0.5em;
+				overflow: hidden;
+				background-color: var(--secondaryBg, var(--SmartThemeBlurTintColor));
+				filter: saturate(0);
+				transition: 200ms;
+				cursor: pointer;
+				&:hover {
+					filter: saturate(1);
+				}
+				&.stac--DELETE_MESSAGE {
+					:nth-child(2) {
+						animation-name: stac--del-mes-target;
+						animation-duration: 2400ms;
+						animation-timing-function: linear;
+						animation-delay: 0s;
+						animation-iteration-count: infinite;
+					}
+					:nth-child(n+3) {
+						animation-name: stac--del-mes-follow;
+						animation-duration: 2400ms;
+						animation-timing-function: linear;
+						animation-delay: 0s;
+						animation-iteration-count: infinite;
+					}
+				}
+				&.stac--DELETE_BRANCH {
+					:nth-child(n+2) {
+						animation-name: stac--del-mes-target;
+						animation-duration: 2400ms;
+						animation-timing-function: linear;
+						animation-delay: 0s;
+						animation-iteration-count: infinite;
+					}
+				}
+				&.stac--DELETE_SWIPE {
+					:nth-child(n+2) {
+						animation-name: stac--del-mes-target-return;
+						animation-duration: 2400ms;
+						animation-timing-function: linear;
+						animation-delay: 0s;
+						animation-iteration-count: infinite;
+					}
+				}
+				> div {
+					border-radius: 3px;
+					height: 2em;
+					border-top-width: 5px;
+					border-top-style: solid;
+					box-shadow: 1px 2px 2px rgb(0 0 0 / 50%);
+					position: relative;
+					&.stac--user {
+						margin-left: 1em;
+						background-color: var(--userColorBg);
+						border-top-color: var(--userColorBgHeader);
+						color: var(--userColorText);
+					}
+					&.stac--bot {
+						margin-right: 1em;
+						background-color: var(--botColorBg);
+						border-top-color: var(--botColorBgHeader);
+						color: var(--botColorText);
+					}
+				}
 			}
 		}
 	}
@@ -433,6 +433,33 @@
 	}
 	100% {
 		top: calc(-2em - 0.6em);
+	}
+}
+
+.stac--head {
+	background-color: rgb(69, 69, 69);
+	border-radius: 4px;
+	display: flex;
+	font-size: smaller;
+	padding: 1px 3px;
+	opacity: 0.5;
+	transition: 200ms;
+	cursor: pointer;
+	&:hover {
+		opacity: 1;
+	}
+	.stac--start {
+		flex: 0 0 50%;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+	.stac--end {
+		flex: 0 0 50%;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		direction: rtl;
 	}
 }
 
@@ -643,6 +670,81 @@ body .stac--swipesDlg {
 		}
 		&.stac--collapsed > .stac--content {
 			display: none;
+		}
+	}
+}
+
+
+.popup:has(.stac--storyDlg) {
+	aspect-ratio: unset;
+	height: 95dvh;
+	width: 95dvw;
+
+	.popup-content {
+		display: flex;
+		flex-direction: column;
+	}
+}
+
+body .stac--storyDlg {
+	display: flex;
+	gap: 1em;
+    text-align: left;
+	overflow: hidden;
+	.stac--col {
+		flex: 1 0 1px;
+		overflow: auto;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.stac--story {
+		.stac--message {
+			margin-bottom: 2em;
+			padding-bottom: 2em;
+			border-bottom: 2px solid silver;
+		}
+		.stac--segment {
+			cursor: pointer;
+			opacity: 0.75;
+			transition: 200ms;
+			&:hover {
+				opacity: 1;
+			}
+		}
+	}
+
+	.stac--sections {
+		gap: 1em;
+		.stac--section {
+			background-color: var(--SmartThemeBotMesBlurTintColor);
+			border: 1px solid var(--SmartThemeBorderColor);
+			border-radius: 4px;
+			font-size: small;
+			padding: 2px 6px;
+		}
+		.stac--details {
+			display: flex;
+			justify-content: space-between;
+			opacity: 0.5;
+		}
+		.stac--title {
+			font-family: var(--monoFontFamily);
+		}
+		.stac--action {
+			cursor: pointer;
+			opacity: 0.5;
+			transition: 200ms;
+			&:hover {
+				opacity: 1;
+			}
+		}
+		.stac--anchor {
+			font-weight: bold;
+		}
+		.stac--dots {
+			opacity: 0.5;
+			font-size: 0.7em;
 		}
 	}
 }
