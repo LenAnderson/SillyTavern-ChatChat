@@ -337,7 +337,7 @@ export class Message {
                     }
                 });
                 this.#dom.content.replaceWith(this.editor);
-                this.editor.focus();
+                // this.editor.focus();
             }
         } else {
             this.text = this.editor.textContent;
