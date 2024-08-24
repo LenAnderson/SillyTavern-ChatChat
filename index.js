@@ -853,7 +853,7 @@ const init = async()=>{
                                                 const idxList = settings.sectionList.map(it=>storyText.indexOf(it));
                                                 const idx = storyText.indexOf(s.trim());
                                                 const insertIdx = idxList.findIndex(it=>it > idx);
-                                                if (idx == -1) settings.sectionList.push(s.trim());
+                                                if (insertIdx == -1) settings.sectionList.push(s.trim());
                                                 else settings.sectionList.splice(insertIdx, 0, s.trim());
                                             }
                                             settings.save();
