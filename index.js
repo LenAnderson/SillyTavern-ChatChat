@@ -769,8 +769,8 @@ const init = async()=>{
                                         del.classList.add('fa-trash-can');
                                         del.title = 'Remove section';
                                         del.addEventListener('click', ()=>{
-                                            if (settings.sectionList.includes(segs[0].trim())) {
-                                                settings.sectionList.splice(settings.sectionList.indexOf(segs[0].trim()), 1);
+                                            if (settings.sectionList.includes(anchor)) {
+                                                settings.sectionList.splice(settings.sectionList.indexOf(anchor), 1);
                                                 settings.save();
                                             }
                                             updateSectionPanel();
