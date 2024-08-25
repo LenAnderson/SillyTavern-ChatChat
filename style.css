@@ -185,6 +185,25 @@
   margin: 0;
   font-size: smaller;
 }
+.stac--panel .stac--messages > .stac--message .stac--content .stac--blockquote {
+  position: relative;
+  padding-right: calc(1.25em + 20px);
+}
+.stac--panel .stac--messages > .stac--message .stac--content .stac--blockquote .stac--copy {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  margin: 0;
+  transition: 200ms;
+}
+.stac--panel .stac--messages > .stac--message .stac--content .stac--blockquote .stac--copy.stac--success {
+  background-color: #51a351;
+  opacity: 1;
+}
+.stac--panel .stac--messages > .stac--message .stac--content .stac--blockquote .stac--copy.stac--failure {
+  background-color: #bd362f;
+  opacity: 1;
+}
 .stac--panel .stac--messages .stac--avatar {
   position: absolute;
   top: -1.4em;

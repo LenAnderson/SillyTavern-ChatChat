@@ -66,7 +66,9 @@ function isRole(mes, roles) {
  * @param {Chat} nc
  */
 const hookChat = (nc)=>{
-    nc.onChange = ()=>save();
+    nc.onChange = ()=>{
+        save();
+    };
     nc.onGenerate = async()=>{
         const usedHistory = currentChat.toFlat();
         if (usedHistory.length < 2) return;
@@ -167,7 +169,7 @@ const updateHeadLoop = async()=>{
     let oldText;
     while (true) {
         const story = chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
-        const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true })
+        const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
         if (oldText != storyText) {
             updateHead(story, storyText);
             oldText = storyText;
@@ -179,7 +181,7 @@ const updateHead = async(story, storyText)=>{
     const seg = new Intl.Segmenter('en', { granularity:'sentence' });
     dom.head.innerHTML = '';
     story ??= chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
-    storyText ??= getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true })
+    storyText ??= getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
     const first = getRegexedString(story[0].mes, regex_placement.AI_OUTPUT, { isPrompt: true });
     const last = getRegexedString(story.slice(-1)[0].mes, regex_placement.AI_OUTPUT, { isPrompt: true });
     if (story.length > 0) {
@@ -887,6 +889,37 @@ const init = async()=>{
         const messages = document.createElement('div'); {
             dom.messages = messages;
             messages.classList.add('stac--messages');
+            messages.addEventListener('click', async(evt)=>{
+                const copy = /**@type {HTMLElement}*/(evt.target);
+                if (copy.classList.contains('stac--copy') && copy.closest('.stac--blockquote')) {
+                    const text = copy.getAttribute('data-text');
+                    let ok = false;
+                    try {
+                        navigator.clipboard.writeText(text);
+                        ok = true;
+                    } catch {
+                        console.warn('/copy cannot use clipboard API, falling back to execCommand');
+                        const ta = document.createElement('textarea'); {
+                            ta.value = text;
+                            ta.style.position = 'fixed';
+                            ta.style.inset = '0';
+                            document.body.append(ta);
+                            ta.focus();
+                            ta.select();
+                            try {
+                                document.execCommand('copy');
+                                ok = true;
+                            } catch (err) {
+                                console.error('Unable to copy to clipboard', err);
+                            }
+                            ta.remove();
+                        }
+                    }
+                    copy.classList.add(`stac--${ok ? 'success' : 'failure'}`);
+                    await delay(1000);
+                    copy.classList.remove(`stac--${ok ? 'success' : 'failure'}`);
+                }
+            });
             panel.append(messages);
         }
         const form = document.createElement('div'); {

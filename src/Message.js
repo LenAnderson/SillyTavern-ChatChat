@@ -332,7 +332,7 @@ export class Message {
                     // escape to cancel
                     if (evt.key == 'Escape' && !evt.ctrlKey && !evt.shiftKey && !evt.altKey) {
                         this.editor.textContent = this.text;
-                        this.toggleEditor()
+                        this.toggleEditor();
                         return;
                     }
                 });
@@ -365,7 +365,55 @@ export class Message {
 
 
     messageFormatting() {
-        return messageFormatting(this.text, this.name, this.isSystem, this.isUser, -1);
+        const lines = this.text.split('\n');
+        /**@type {{type:string, lines:string[]}[]} */
+        const parts = [];
+        /**@type {{type:string, lines:string[]}} */
+        let part;
+        for (const line of lines) {
+            if (line[0] == '>') {
+                const trimmedLine = line.replace(/^>\s*/, '');
+                if (part?.type == 'blockquote') {
+                    part.lines.push(trimmedLine);
+                } else {
+                    part = { type:'blockquote', lines:[trimmedLine] };
+                    parts.push(part);
+                }
+            } else {
+                if (part?.type == 'markdown') {
+                    part.lines.push(line);
+                } else {
+                    part = { type:'markdown', lines:[line] };
+                    parts.push(part);
+                }
+            }
+        }
+        return parts
+            .map(part=>{
+                switch (part.type) {
+                    case 'blockquote': {
+                        const text = part.lines.join('\n');
+                        const el = document.createElement('blockquote'); {
+                            el.classList.add('stac--blockquote');
+                            el.innerHTML = messageFormatting(text, this.name, this.isSystem, this.isUser, -1);
+                            const copy = document.createElement('div'); {
+                                copy.classList.add('stac--copy');
+                                copy.classList.add('menu_button');
+                                copy.classList.add('fa-solid', 'fa-fw', 'fa-clipboard');
+                                copy.title = 'Copy quote to clipboard';
+                                copy.setAttribute('data-text', text);
+                                el.append(copy);
+                            }
+                        }
+                        return el.outerHTML;
+                    }
+                    default: {
+                        return messageFormatting(part.lines.join('\n'), this.name, this.isSystem, this.isUser, -1);
+                    }
+                }
+            })
+            .join('\n')
+        ;
     }
 
     /**
