@@ -195,6 +195,10 @@
   right: 4px;
   margin: 0;
   transition: 200ms;
+  opacity: 0.5;
+}
+.stac--panel .stac--messages > .stac--message .stac--content .stac--blockquote .stac--copy:hover {
+  opacity: 1;
 }
 .stac--panel .stac--messages > .stac--message .stac--content .stac--blockquote .stac--copy.stac--success {
   background-color: #51a351;
