@@ -399,7 +399,7 @@ export class Message {
                             const copy = document.createElement('div'); {
                                 copy.classList.add('stac--copy');
                                 copy.classList.add('menu_button');
-                                copy.classList.add('fa-solid', 'fa-fw', 'fa-clipboard');
+                                copy.classList.add('fa-solid', 'fa-fw', 'fa-copy');
                                 copy.title = 'Copy quote to clipboard';
                                 copy.setAttribute('data-text', text);
                                 el.append(copy);
