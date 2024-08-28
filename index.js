@@ -325,6 +325,12 @@ const getSections = (history)=>{
  * @returns {Promise<{ userMes:import('./src/Message.js').ChatMessage, botMes:import('./src/Message.js').ChatMessage }>}
  */
 const gen = async(history, userText, bm)=>{
+    // remember current chat input
+    const ta = /**@type {HTMLTextAreaElement}*/(document.querySelector('#send_textarea'));
+    const taInput = ta.value;
+    ta.value = '';
+
+    // execute pre-scripts
     if (settings.scriptBefore.length > 1 && settings.scriptBefore[0] == '/') {
         await executeSlashCommandsWithOptions(settings.scriptBefore, {
             handleExecutionErrors: true,
@@ -332,7 +338,11 @@ const gen = async(history, userText, bm)=>{
             source: 'chatchat-before',
         });
     }
+
+    // make sure chat is saved
     await saveChatConditional();
+
+    // add style to hide mesages that ChatChat adds to main chat
     const style = document.createElement('style');
     style.innerHTML = `
         #chat .mes {
@@ -342,8 +352,11 @@ const gen = async(history, userText, bm)=>{
         }
     `;
     document.body.append(style);
+
+    // clone current chat array for restoring later
     const chatClone = structuredClone(chat);
-    // const story = [];
+
+    // build story block
     const sections = getSections(chat);
     let story = '';
     if (sections.length == 1) {
@@ -356,14 +369,8 @@ const gen = async(history, userText, bm)=>{
         if (mes.is_system) continue;
         mes.is_system = true;
     }
-    settings.injectList.forEach(({ text, type, depth, scan, role },idx)=>setExtensionPrompt(
-        `chatchat-user-${idx}`,
-        text,
-        type,
-        depth,
-        scan,
-        role,
-    ));
+
+    // add story block as injection
     setExtensionPrompt(
         'chatchat-content',
         `<Story>${story}</Story>`,
@@ -372,6 +379,18 @@ const gen = async(history, userText, bm)=>{
         true,
         extension_prompt_roles.SYSTEM,
     );
+
+    // add user injections (settings are not implemented)
+    settings.injectList.forEach(({ text, type, depth, scan, role },idx)=>setExtensionPrompt(
+        `chatchat-user-${idx}`,
+        text,
+        type,
+        depth,
+        scan,
+        role,
+    ));
+
+    // add ChatChat messages (history) as injections
     const historyInjects = [];
     for (const h of history) {
         const id = `chatchat-history-${historyInjects.length}`;
@@ -386,8 +405,12 @@ const gen = async(history, userText, bm)=>{
         historyInjects.push(args);
         setExtensionPrompt(args[0], args[1], args[2], args[3], args[4], args[5]);
     }
+
+    // send the latest user message as regular chat message
     await sendMessageAsUser(userText, null);
     const userMes = structuredClone(chat.slice(-1)[0]);
+
+    // wait for and then observe bot message to stream the response
     let botMes;
     const idx = chat.length;
     let isDone = false;
@@ -409,11 +432,20 @@ const gen = async(history, userText, bm)=>{
         toastr.error(ex.message, 'ChatChat');
     }
     mo?.disconnect();
+
+    // save the bot mesage
     botMes = structuredClone(chat.slice(-1)[0]);
     dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
+
+    // restore original chat array
     chat.splice(0, chatClone.length, ...chatClone);
+
+    // remove the messages ChatChat had added to regular chat
     await executeSlashCommandsWithOptions(`/cut ${chatClone.length}-{{lastMessageId}}`);
+    // remove the style to hide those messages
     style.remove();
+
+    // remove user injections
     settings.injectList.forEach(({ text, position, depth, scan, role },idx)=>setExtensionPrompt(
         `chatchat-user-${idx}`,
         '',
@@ -422,6 +454,8 @@ const gen = async(history, userText, bm)=>{
         scan,
         role,
     ));
+
+    // remove story block injection
     setExtensionPrompt(
         'chatchat-content',
         '',
@@ -430,9 +464,13 @@ const gen = async(history, userText, bm)=>{
         true,
         extension_prompt_roles.SYSTEM,
     );
+
+    // remove ChatChat messages (history) injections
     for (const h of historyInjects) {
         setExtensionPrompt(h[0], '', h[2], h[3], h[4], h[5]);
     }
+
+    // execute after-scripts
     if (settings.scriptAfter.length > 1 && settings.scriptAfter[0] == '/') {
         await executeSlashCommandsWithOptions(settings.scriptAfter, {
             handleExecutionErrors: true,
@@ -440,6 +478,10 @@ const gen = async(history, userText, bm)=>{
             source: 'chatchat-after',
         });
     }
+
+    // restore chat input
+    ta.value = taInput;
+
     return { userMes, botMes };
 };
 
