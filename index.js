@@ -11,6 +11,7 @@ import { groupId } from '../SillyTavern-TriggerCards/index.js';
 import { Chat } from './src/Chat.js';
 import { waitForFrame } from './src/lib/wait.js';
 import { Message } from './src/Message.js';
+import { Section } from './src/Section.js';
 import { Settings, STORY_POSITION, WIDTH_TYPE } from './src/Settings.js';
 
 
@@ -183,39 +184,39 @@ const onChatChanged = async()=>{
 const updateHeadLoop = async()=>{
     let oldText;
     while (true) {
-        const story = chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
-        const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
+        const allSections = getSections();
+        const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
+        const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
         if (oldText != storyText) {
-            updateHead(story, storyText);
+            updateHead();
             oldText = storyText;
         }
         await delay(500);
     }
 };
-const updateHead = async(story, storyText)=>{
+const updateHead = async()=>{
     const seg = new Intl.Segmenter('en', { granularity:'sentence' });
     dom.head.innerHTML = '';
-    story ??= chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
-    storyText ??= getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
-    const first = getRegexedString(story[0].mes, regex_placement.AI_OUTPUT, { isPrompt: true });
-    const last = getRegexedString(story.slice(-1)[0].mes, regex_placement.AI_OUTPUT, { isPrompt: true });
-    if (story.length > 0) {
-        const start = document.createElement('div'); {
-            start.classList.add('stac--start');
-            start.textContent = first;
-            dom.head.append(start);
-        }
-        const end = document.createElement('div'); {
-            end.classList.add('stac--end');
-            end.textContent = last;
-            end.innerHTML += '&lrm;';
-            dom.head.append(end);
-        }
-    }
+    const allSections = getSections();
+    const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
+    const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
+    const first = getRegexedString(sections[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
+    const last = getRegexedString(sections.slice(-1)[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
     const segFirst = [...seg.segment(first)];
     const segLast = [...seg.segment(last)];
+    const start = document.createElement('div'); {
+        start.classList.add('stac--start');
+        start.textContent = segFirst.slice(0, 4).map(it=>it.segment).join(' ');
+        dom.head.append(start);
+    }
+    const end = document.createElement('div'); {
+        end.classList.add('stac--end');
+        end.textContent = segLast.slice(-4).map(it=>it.segment.trim()).join(' ');
+        end.innerHTML += '&lrm;';
+        dom.head.append(end);
+    }
     dom.head.title = [
-        `Story: Message #${0} to #${chat.length - 1}  (~${await getTokenCountAsync(storyText)} tokens) | ${settings.sectionList.length ? `${settings.sectionList.length + 1} sections` : null}`,
+        `Story: ${sections.length} of ${allSections.length || 1} sections (~${await getTokenCountAsync(storyText)} tokens)`,
         '---',
         segFirst.slice(0, 4).map(it=>it.segment.trim()).join(' '),
         '[...]',
@@ -259,14 +260,20 @@ const send = async(text)=>{
     await save();
 };
 
+/**
+ *
+ * @param {*} history
+ * @returns {{anchor:string, index:number, text:string, section:Section}[]}
+ */
 const getSections = (history)=>{
     history ??= chat;
     const story = history.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
     const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
-    const sectionIndex = [{ anchor:'', index:0, text:'' }];
+    const sectionIndex = [{ anchor:'', index:0, text:'', section:null }];
     let prev = sectionIndex[0];
     let empties = [];
-    for (const sep of settings.sectionList) {
+    for (const section of settings.sectionList) {
+        const { separator:sep } = section;
         const lastIdx = sectionIndex.filter((it,i,list)=>i == 0 || it.index > list[i - 1].index).slice(-1)[0];
         const remaining = storyText.slice(lastIdx.index);
         const idx = remaining.indexOf(sep);
@@ -286,11 +293,12 @@ const getSections = (history)=>{
                 anchor: sep,
                 index: absIdx,
                 text: '',
+                section,
             };
             sectionIndex.push(item);
             prev = item;
         } else {
-            const item = { anchor:sep, index:-1, text:'' };
+            const item = { anchor:sep, index:-1, text:'', section };
             sectionIndex.push(item);
             empties.push(item);
         }
@@ -362,7 +370,7 @@ const gen = async(history, userText, bm)=>{
     const chatClone = structuredClone(chat);
 
     // build story block
-    const sections = getSections(chat);
+    const sections = getSections(chat).filter(it=>it.section?.isIncluded ?? true);
     let story = '';
     if (sections.length == 1) {
         story = sections[0].text;
@@ -858,7 +866,7 @@ const init = async()=>{
                     sections = getSections();
                     domSectionPanel.innerHTML = '';
                     let idx = 0;
-                    for (const { anchor, text:storySection } of sections) {
+                    for (const { anchor, text:storySection, section:sec } of sections) {
                         idx++;
                         const segs = [...seg.segment(storySection)].map(it=>it.segment);
                         const first = document.createElement('div'); {
@@ -880,14 +888,33 @@ const init = async()=>{
                                 }
                                 const actions = document.createElement('div'); {
                                     actions.classList.add('stac--actions');
+                                    const hide = document.createElement('div'); {
+                                        hide.classList.add('stac--action');
+                                        hide.classList.add('fa-solid', 'fa-fw');
+                                        if (sec?.isIncluded ?? true) hide.classList.add('fa-eye');
+                                        else hide.classList.add('fa-eye-slash');
+                                        hide.title = 'Remove section';
+                                        hide.addEventListener('click', async ()=>{
+                                            sec.isIncluded = !sec.isIncluded;
+                                            if (sec.isIncluded) {
+                                                hide.classList.add('fa-eye');
+                                                hide.classList.remove('fa-eye-slash');
+                                            } else {
+                                                hide.classList.remove('fa-eye');
+                                                hide.classList.add('fa-eye-slash');
+                                            }
+                                            await settings.save();
+                                        });
+                                        actions.append(hide);
+                                    }
                                     const del = document.createElement('div'); {
                                         del.classList.add('stac--action');
                                         del.classList.add('fa-solid', 'fa-fw');
                                         del.classList.add('fa-trash-can');
                                         del.title = 'Remove section';
                                         del.addEventListener('click', async ()=>{
-                                            if (settings.sectionList.includes(anchor)) {
-                                                settings.sectionList.splice(settings.sectionList.indexOf(anchor), 1);
+                                            if (settings.sectionList.map(it=>it.separator == anchor)) {
+                                                settings.sectionList.splice(settings.sectionList.findIndex(it=>it.separator == anchor), 1);
                                                 await settings.save();
                                             }
                                             updateSectionPanel();
@@ -964,14 +991,14 @@ const init = async()=>{
                                             idx++;
                                         }
                                         segment.addEventListener('click', async()=>{
-                                            if (settings.sectionList.includes(s.trim())) {
-                                                settings.sectionList.splice(settings.sectionList.indexOf(s.trim()), 1);
+                                            if (settings.sectionList.find(it=>it.separator == s.trim())) {
+                                                settings.sectionList.splice(settings.sectionList.findIndex(it=>it.separator == s.trim()), 1);
                                             } else {
-                                                const idxList = settings.sectionList.map(it=>storyText.indexOf(it));
+                                                const idxList = settings.sectionList.map(it=>storyText.indexOf(it.separator));
                                                 const idx = storyText.indexOf(s.trim());
                                                 const insertIdx = idxList.findIndex(it=>it > idx);
-                                                if (insertIdx == -1) settings.sectionList.push(s.trim());
-                                                else settings.sectionList.splice(insertIdx, 0, s.trim());
+                                                if (insertIdx == -1) settings.sectionList.push(Section.create(s.trim()));
+                                                else settings.sectionList.splice(insertIdx, 0, Section.create(s.trim()));
                                             }
                                             await settings.save();
                                             updateSectionPanel();

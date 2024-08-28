@@ -3,6 +3,7 @@ import { extension_settings, saveMetadataDebounced } from '../../../../extension
 import { delay } from '../../../../utils.js';
 import { initMetadata } from '../index.js';
 import { Message } from './Message.js';
+import { Section } from './Section.js';
 // eslint-disable-next-line no-unused-vars
 import { BaseSetting } from './settings/BaseSetting.js';
 import { CheckboxSetting } from './settings/CheckboxSetting.js';
@@ -59,7 +60,7 @@ export class Settings {
     /**@type {number} */ storyDepth = 1;
     /**@type {string} */ character;
     /**@type {string[]} */ inputHistory = [];
-    /**@type {string[]} */ sectionList = [];
+    /**@type {Section[]} */ sectionList = [];
 
     /**@type {BaseSetting[]}*/ settingList = [];
 
@@ -107,6 +108,10 @@ export class Settings {
         Object.assign(this, extension_settings.chatchat ?? {});
         const chatSettings = chat_metadata?.chatchat?.settings ?? {};
         if (!chatSettings.inputHistory) chatSettings.inputHistory = [];
+        if (chatSettings.sectionList) chatSettings.sectionList = chatSettings.sectionList.map(it=>{
+            if (typeof it == 'string') return Section.create(it);
+            return Section.from(it);
+        });
         Object.assign(this, chatSettings);
     }
 
