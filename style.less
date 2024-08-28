@@ -256,11 +256,15 @@
 			color: var(--userColorTextHeader);
 			margin-left: -10px;
 			padding-left: 10px;
+			.stac--actions {
+				padding-left: calc(3em / 0.75);
+			}
 		}
 		.stac--details {
 			display: flex;
-			justify-content: space-between;
+			// justify-content: space-between;
 			align-items: center;
+			gap: 2em;
 
 			background-color: var(--botColorBgHeader);
 			border-bottom: 1px solid black;
@@ -275,11 +279,15 @@
 				font-size: 0.75em;
 				opacity: 0.5;
 			}
-			.stac--actions {
+			.stac--actions, .stac--nav {
 				font-size: 0.75em;
 				display: flex;
 				gap: 0.5em;
 				position: relative;
+			}
+			.stac--nav {
+				flex: 1 1 auto;
+				justify-content: end;
 			}
 			.stac--info {
 				margin: 0 -0.5em;

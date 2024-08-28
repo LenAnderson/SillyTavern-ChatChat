@@ -452,6 +452,38 @@ export class Message {
                         dt.textContent = this.sendDate;
                         details.append(dt);
                     }
+                    const nav = document.createElement('div'); {
+                        nav.classList.add('stac--nav');
+                        const first = document.createElement('div'); {
+                            first.classList.add('stac--action');
+                            first.classList.add('stac--first');
+                            first.classList.add('fa-solid', 'fa-fw', 'fa-angles-up');
+                            first.title = 'To start';
+                            nav.append(first);
+                        }
+                        const prev = document.createElement('div'); {
+                            prev.classList.add('stac--action');
+                            prev.classList.add('stac--prev');
+                            prev.classList.add('fa-solid', 'fa-fw', 'fa-angle-up');
+                            prev.title = 'To previous';
+                            nav.append(prev);
+                        }
+                        const next = document.createElement('div'); {
+                            next.classList.add('stac--action');
+                            next.classList.add('stac--next');
+                            next.classList.add('fa-solid', 'fa-fw', 'fa-angle-down');
+                            next.title = 'To next';
+                            nav.append(next);
+                        }
+                        const last = document.createElement('div'); {
+                            last.classList.add('stac--action');
+                            last.classList.add('stac--last');
+                            last.classList.add('fa-solid', 'fa-fw', 'fa-angles-down');
+                            last.title = 'To end';
+                            nav.append(last);
+                        }
+                        details.append(nav);
+                    }
                     const actions = document.createElement('div'); {
                         actions.classList.add('stac--actions');
                         const del = document.createElement('div'); {

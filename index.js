@@ -822,9 +822,9 @@ const init = async()=>{
             dom.messages = messages;
             messages.classList.add('stac--messages');
             messages.addEventListener('click', async(evt)=>{
-                const copy = /**@type {HTMLElement}*/(evt.target);
-                if (copy.classList.contains('stac--copy') && copy.closest('.stac--blockquote')) {
-                    const text = copy.getAttribute('data-text');
+                const target = /**@type {HTMLElement}*/(evt.target);
+                if (target.classList.contains('stac--copy') && target.closest('.stac--blockquote')) {
+                    const text = target.getAttribute('data-text');
                     let ok = false;
                     try {
                         navigator.clipboard.writeText(text);
@@ -847,9 +847,17 @@ const init = async()=>{
                             ta.remove();
                         }
                     }
-                    copy.classList.add(`stac--${ok ? 'success' : 'failure'}`);
+                    target.classList.add(`stac--${ok ? 'success' : 'failure'}`);
                     await delay(1000);
-                    copy.classList.remove(`stac--${ok ? 'success' : 'failure'}`);
+                    target.classList.remove(`stac--${ok ? 'success' : 'failure'}`);
+                } else if (target.classList.contains('stac--first')) {
+                    dom.messages.children[dom.messages.children.length - 1]?.scrollIntoView({ behavior:'smooth', block:'start' });
+                } else if (target.classList.contains('stac--prev')) {
+                    dom.messages.children[[...dom.messages.children].indexOf(target.closest('.stac--message')) + 1]?.scrollIntoView({ behavior:'smooth', block:'start' });
+                } else if (target.classList.contains('stac--next')) {
+                    dom.messages.children[[...dom.messages.children].indexOf(target.closest('.stac--message')) - 1]?.scrollIntoView({ behavior:'smooth', block:'start' });
+                } else if (target.classList.contains('stac--last')) {
+                    dom.messages.children[0]?.scrollIntoView({ behavior:'smooth', block:'start' });
                 }
             });
             panel.append(messages);
