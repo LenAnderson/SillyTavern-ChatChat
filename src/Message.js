@@ -3,7 +3,7 @@ import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay } from '../../../../utils.js';
 import morphdom from '../../../quick-reply/lib/morphdom-esm.js';
-import { settings } from '../index.js';
+import { isBusy, settings } from '../index.js';
 import { waitForFrame } from './lib/wait.js';
 import { DELETE_ACTION } from './Settings.js';
 
@@ -532,6 +532,7 @@ export class Message {
                                 }
                             };
                             del.addEventListener('click', async(evt)=>{
+                                if (isBusy) return;
                                 switch (settings.deleteAction) {
                                     case DELETE_ACTION.SHOW_MENU: {
                                         showDelMenu();
@@ -544,6 +545,7 @@ export class Message {
                                 }
                             });
                             del.addEventListener('contextmenu', async(evt)=>{
+                                if (isBusy) return;
                                 evt.preventDefault();
                                 showDelMenu();
                             });
@@ -588,6 +590,7 @@ export class Message {
                             swipeLeft.classList.add('fa-solid', 'fa-chevron-left');
                             swipeLeft.title = 'Show previous swipe';
                             swipeLeft.addEventListener('click', ()=>{
+                                if (isBusy) return;
                                 if (this.swipeIndex == 0) return;
                                 const oldSwipe = this.swipe;
                                 this.swipeIndex--;
@@ -604,6 +607,7 @@ export class Message {
                             swipes.textContent = `${this.swipeIndex + 1} / ${(this.swipeList.length)}`;
                             swipes.title = 'Manage swipes / branches';
                             swipes.addEventListener('click', async()=>{
+                                if (isBusy) return;
                                 const dom = document.createElement('div'); {
                                     dom.classList.add('stac--swipesDlg');
                                     for (const swipe of this.swipeList) {
@@ -698,6 +702,7 @@ export class Message {
                             actions.append(swipes);
                         }
                         const swipeRight = document.createElement('div'); {
+                            if (isBusy) return;
                             swipeRight.classList.add('stac--action');
                             swipeRight.classList.add('stac--swipeRight');
                             swipeRight.classList.add('fa-solid', 'fa-chevron-right');

@@ -17,6 +17,8 @@ import { Settings, STORY_POSITION, WIDTH_TYPE } from './src/Settings.js';
 /**@type {Settings} */
 export let settings;
 
+export let isBusy = false;
+
 
 function isRole(mes, roles) {
     const isNarrator = mes.extra?.type === system_message_types.NARRATOR;
@@ -168,6 +170,7 @@ const onChatChanged = async()=>{
     }
     chatIndex = chat_metadata.chatchat.chatIndex;
     currentChat = await Chat.load(chatList[chatIndex]);
+    hookChat(currentChat);
     reloadChat();
     if ((this_chid === null || this_chid === undefined) && (groupId === null || groupId === undefined)) {
         document.body.classList.add('stac--nochat');
@@ -325,6 +328,8 @@ const getSections = (history)=>{
  * @returns {Promise<{ userMes:import('./src/Message.js').ChatMessage, botMes:import('./src/Message.js').ChatMessage }>}
  */
 const gen = async(history, userText, bm)=>{
+    isBusy = true;
+
     // remember current chat input
     const ta = /**@type {HTMLTextAreaElement}*/(document.querySelector('#send_textarea'));
     const taInput = ta.value;
@@ -482,6 +487,8 @@ const gen = async(history, userText, bm)=>{
     // restore chat input
     ta.value = taInput;
 
+    isBusy = false;
+
     return { userMes, botMes };
 };
 
@@ -626,11 +633,13 @@ const showMenu = async()=>{
                                     if (chatList.length > chatIndex) {
                                         // keep index, show next chat
                                         currentChat = await Chat.load(chatList[chatIndex]);
+                                        hookChat(currentChat);
                                         item.previousElementSibling.classList.add('stac--current');
                                     } else if (chatList.length > 0) {
                                         // show prev chat
                                         chatIndex--;
                                         currentChat = await Chat.load(chatList[chatIndex]);
+                                        hookChat(currentChat);
                                         item.nextElementSibling.classList.add('stac--current');
                                     } else {
                                         // add new empty chat
@@ -690,6 +699,7 @@ const showMenu = async()=>{
                     hideMenu();
                     chatIndex = chatList.findIndex(it=>it.subdir == c.subdir && it.id == c.id);
                     currentChat = await Chat.load(c);
+                    hookChat(currentChat);
                     await save();
                     reloadChat();
                     dom.panel.classList.add('stac--active');
@@ -773,6 +783,7 @@ const init = async()=>{
         trigger.title = 'Click to toggle ChatChat\nRight-click for settings and chat management';
         trigger.addEventListener('click', ()=>{
             if (!isReady) return;
+            if (isBusy) return;
             if (panel.classList.toggle('stac--active')) {
                 dom.input.focus();
             } else {
@@ -782,6 +793,7 @@ const init = async()=>{
         trigger.addEventListener('contextmenu', async(evt)=>{
             evt.preventDefault();
             if (!isReady) return;
+            if (isBusy) return;
             showMenu();
         });
         const spinner = document.createElement('div'); {
@@ -998,6 +1010,7 @@ const init = async()=>{
                 inp.classList.add('stac--input');
                 inp.classList.add('text_pole');
                 inp.addEventListener('keydown', async(evt)=>{
+                    if (isBusy) return;
                     evt.stopPropagation();
                     if (!evt.shiftKey && !evt.ctrlKey && !evt.altKey && evt.key == 'ArrowRight') {
                         if (document.activeElement == inp && inp.textContent == '') {
@@ -1039,6 +1052,7 @@ const init = async()=>{
                     sendBtn.classList.add('fa-solid', 'fa-paper-plane');
                     sendBtn.title = 'Send message';
                     sendBtn.addEventListener('click', async()=>{
+                        if (isBusy) return;
                         const text = dom.input.textContent;
                         dom.input.textContent = '';
                         await send(text);
