@@ -21,6 +21,12 @@
 .stac--trigger.stac--hasMenu {
   z-index: 30010;
 }
+.stac--trigger .stac--spinner {
+  position: absolute;
+  font-size: 0.75em;
+  inset: calc(1em / 6);
+  filter: invert(1);
+}
 .stac--menu {
   filter: drop-shadow(1px 1px 2px var(--black50a));
   z-index: 30000;
@@ -374,6 +380,22 @@
   background-color: var(--botColorBg);
   border-top-color: var(--botColorBgHeader);
   color: var(--botColorText);
+}
+.stac--panel .stac--spinner {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  backdrop-filter: blur(10px);
+  font-size: 5em;
+  inset: 0;
+  z-index: 1;
+}
+.stac--panel .stac--spinner > div {
+  display: flex;
+}
+.stac--panel.stac--isLoading .stac--spinner {
+  display: flex;
 }
 @keyframes stac--del-mes-target {
   0% {

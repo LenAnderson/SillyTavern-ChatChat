@@ -1,4 +1,4 @@
-import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, sendMessageAsUser, setExtensionPrompt, system_message_types, this_chid } from '../../../../script.js';
+import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, saveMetadata, sendMessageAsUser, setExtensionPrompt, system_message_types, this_chid } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
 import { Popup, POPUP_TYPE } from '../../../popup.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
@@ -66,8 +66,8 @@ function isRole(mes, roles) {
  * @param {Chat} nc
  */
 const hookChat = (nc)=>{
-    nc.onChange = ()=>{
-        save();
+    nc.onChange = async()=>{
+        await save();
     };
     nc.onGenerate = async()=>{
         const usedHistory = currentChat.toFlat();
@@ -81,26 +81,30 @@ const hookChat = (nc)=>{
         // eslint-disable-next-line no-unused-vars
         const { userMes:_, botMes } = await gen(usedHistory, text, bm);
         bm.update(botMes);
-        save();
+        await save();
     };
 };
 const addChat = ()=>{
     const nc = new Chat();
     hookChat(nc);
-    chatList.push(nc);
+    chatList.push(nc.file);
     return nc;
 };
-/**@type {Chat[]} */
+/**@type {{subdir:string, id:string, lastChatOn:number}[]} */
 const chatList = []; {
     addChat();
 }
 let chatIndex = 0;
-let currentChat = chatList[0];
+let currentChat;
 const dom = {
     /**@type {HTMLElement} */
     trigger: undefined,
     /**@type {HTMLElement} */
+    triggerSpinner: undefined,
+    /**@type {HTMLElement} */
     panel: undefined,
+    /**@type {HTMLElement} */
+    panelSpinner: undefined,
     /**@type {HTMLElement} */
     head: undefined,
     /**@type {HTMLElement} */
@@ -112,50 +116,58 @@ const dom = {
     /**@type {HTMLElement} */
     historyBtn: undefined,
 };
-export const initMetadata = ()=>{
+export const initMetadata = async()=>{
     if (!chat_metadata.chatchat) chat_metadata.chatchat = {};
     if (!chat_metadata.chatchat.settings) chat_metadata.chatchat.settings = {};
     if (!chat_metadata.chatchat.chatList) {
         chat_metadata.chatchat.chatList = []; {
             const nc = new Chat();
             hookChat(nc);
-            chat_metadata.chatchat.chatList.push(nc);
+            chat_metadata.chatchat.chatList.push(nc.file);
+            currentChat = nc;
         }
         chat_metadata.chatchat.chatIndex = 0;
-        if (chat_metadata.chatchat.history) {
-            chat_metadata.chatchat.chatList[0].messageList = chat_metadata.chatchat.history;
+    } else if (chat_metadata.chatchat.chatList[0].subdir == undefined || chat_metadata.chatchat.chatList[0].id == undefined) {
+        // compat for chat objects in metadata
+        const migrateToast = toastr.warning(
+            `Migrating ${chat_metadata.chatchat.chatList.length} ChatChats from chat metadata to disk.<br>Please wait...`,
+            'ChatChat',
+            { closeButton:false, escapeHtml:false, timeOut:0 },
+        );
+        let idx = 0;
+        for (const data of chat_metadata.chatchat.chatList) {
+            const chat = Chat.from(data);
+            await chat.save();
+            chat_metadata.chatchat.chatList[idx] = chat.file;
+            idx++;
         }
-    } else if (!chat_metadata.chatchat.chatIndex) {
-        chat_metadata.chatchat.chatIndex = 0;
+        await saveMetadata();
+        toastr.clear(migrateToast);
+        toastr.success(`Migrated ${chat_metadata.chatchat.chatList.length} ChatChats.`, 'ChatChat');
     }
-    chat_metadata.chatchat.chatList.forEach((it,idx)=>{
-        if (!(it instanceof Chat)) {
-            const nc = Chat.from(it);
-            hookChat(nc);
-            chat_metadata.chatchat.chatList[idx] = nc;
-        }
-    });
 };
-const save = ()=>{
-    initMetadata();
+const save = async()=>{
+    await initMetadata();
     chat_metadata.chatchat.chatList = chatList;
     chat_metadata.chatchat.chatIndex = chatIndex;
     saveMetadataDebounced();
 };
 const onChatChanged = async()=>{
     console.log('[STAC]', 'onChatChanged');
+    dom.panel.classList.add('stac--isLoading');
     settings.hide();
     settings.load();
     settings.registerSettings();
     await settings.init();
-    initMetadata();
+    await initMetadata();
     while(chatList.pop());
     chatList.push(...chat_metadata.chatchat.chatList);
     if (chatList.length == 0) {
-        addChat();
+        currentChat = addChat();
+        chat_metadata.chatchat.chatIndex = 0;
     }
     chatIndex = chat_metadata.chatchat.chatIndex;
-    currentChat = chatList[chatIndex];
+    currentChat = await Chat.load(chatList[chatIndex]);
     reloadChat();
     if ((this_chid === null || this_chid === undefined) && (groupId === null || groupId === undefined)) {
         document.body.classList.add('stac--nochat');
@@ -210,6 +222,7 @@ const updateHead = async(story, storyText)=>{
 const reloadChat = async()=>{
     updateHead();
     currentChat.render(dom.messages);
+    dom.panel.classList.remove('stac--isLoading');
 };
 const send = async(text)=>{
     text = text.trim();
@@ -226,7 +239,7 @@ const send = async(text)=>{
         settings.inputHistory.unshift(text);
         settings.inputHistory = settings.inputHistory.filter((it,idx,list)=>idx == list.indexOf(it));
         while (settings.inputHistory.length > settings.maxInputHistory) settings.inputHistory.pop();
-        settings.save();
+        await settings.save();
         um = Message.fromText(text);
         um.isUser = true;
         currentChat.addMessage(um);
@@ -240,7 +253,7 @@ const send = async(text)=>{
         um.update(userMes);
     }
     bm.update(botMes);
-    save();
+    await save();
 };
 
 const getSections = (history)=>{
@@ -486,11 +499,12 @@ const showMenu = async()=>{
                 newChat.append(label);
             }
             newChat.addEventListener('click', async()=>{
+                dom.panel.classList.add('stac--isLoading');
                 hideMenu();
                 const nc = addChat();
                 chatIndex++;
                 currentChat = nc;
-                save();
+                await save();
                 reloadChat();
                 dom.panel.classList.add('stac--active');
                 dom.input.focus();
@@ -502,7 +516,7 @@ const showMenu = async()=>{
             const item = document.createElement('div'); {
                 item.classList.add('stac--item');
                 item.classList.add('stac--chat');
-                if (c == currentChat) item.classList.add('stac--current');
+                if (currentChat.equals(c)) item.classList.add('stac--current');
                 const titleParts = [
                     c.rootMessage?.text?.split('\n')?.filter(it=>it.length)?.[0],
                     '...',
@@ -561,19 +575,20 @@ const showMenu = async()=>{
                             del.classList.add('menu_button');
                             del.classList.add('fa-solid', 'fa-fw', 'fa-trash-can');
                             del.title = 'Delete chat\n---\nNo warning, no confirm. When it\'s gone it\'s gone...';
-                            del.addEventListener('click', (evt)=>{
+                            del.addEventListener('click', async(evt)=>{
                                 evt.stopPropagation();
-                                let isCurrent = currentChat == c;
-                                chatList.splice(chatList.indexOf(c), 1);
+                                let isCurrent = currentChat?.equals(c);
+                                chatList.splice(chatList.findIndex(it=>it.subdir == c.subdir && it.id == c.id), 1);
                                 if (isCurrent) {
+                                    dom.panel.classList.add('stac--isLoading');
                                     if (chatList.length > chatIndex) {
                                         // keep index, show next chat
-                                        currentChat = chatList[chatIndex];
+                                        currentChat = await Chat.load(chatList[chatIndex]);
                                         item.previousElementSibling.classList.add('stac--current');
                                     } else if (chatList.length > 0) {
                                         // show prev chat
                                         chatIndex--;
-                                        currentChat = chatList[chatIndex];
+                                        currentChat = await Chat.load(chatList[chatIndex]);
                                         item.nextElementSibling.classList.add('stac--current');
                                     } else {
                                         // add new empty chat
@@ -582,7 +597,7 @@ const showMenu = async()=>{
                                         renderItem(nc);
                                     }
                                 } else {
-                                    chatIndex = chatList.indexOf(currentChat);
+                                    chatIndex = chatList.findIndex(it=>it.subdir == c.subdir && it.id == c.id);
                                 }
                                 item.style.height = `${item.getBoundingClientRect().height}px`;
                                 waitForFrame().then(async()=>{
@@ -591,7 +606,7 @@ const showMenu = async()=>{
                                     await delay(410);
                                     item.remove();
                                 });
-                                save();
+                                await save();
                                 if (isCurrent) {
                                     reloadChat();
                                 }
@@ -612,13 +627,13 @@ const showMenu = async()=>{
                                 const sel = window.getSelection();
                                 sel.removeAllRanges();
                                 sel.addRange(range);
-                                const listener = (evt)=>{
+                                const listener = async(evt)=>{
                                     evt.stopPropagation();
                                     if (evt.shiftKey || evt.altKey || evt.ctrlKey || evt.key != 'Enter') return;
                                     titleEl.removeEventListener('keydown', listener);
                                     titleEl.removeAttribute('contenteditable');
                                     c.title = titleEl.textContent;
-                                    save();
+                                    await save();
                                 };
                                 titleEl.addEventListener('keydown', listener);
                             });
@@ -629,10 +644,11 @@ const showMenu = async()=>{
                     item.append(label);
                 }
                 item.addEventListener('click', async()=>{
+                    dom.panel.classList.add('stac--isLoading');
                     hideMenu();
-                    chatIndex = chatList.indexOf(c);
-                    currentChat = c;
-                    save();
+                    chatIndex = chatList.findIndex(it=>it.subdir == c.subdir && it.id == c.id);
+                    currentChat = await Chat.load(c);
+                    await save();
                     reloadChat();
                     dom.panel.classList.add('stac--active');
                     dom.input.focus();
@@ -706,6 +722,7 @@ const showHistoryMenu = async()=>{
 
 
 const init = async()=>{
+    let isReady = false;
     loadSettings();
     const trigger = document.createElement('div'); {
         dom.trigger = trigger;
@@ -713,6 +730,7 @@ const init = async()=>{
         trigger.classList.add('fa', 'fa-solid', 'fa-comment-alt');
         trigger.title = 'Click to toggle ChatChat\nRight-click for settings and chat management';
         trigger.addEventListener('click', ()=>{
+            if (!isReady) return;
             if (panel.classList.toggle('stac--active')) {
                 dom.input.focus();
             } else {
@@ -721,8 +739,15 @@ const init = async()=>{
         });
         trigger.addEventListener('contextmenu', async(evt)=>{
             evt.preventDefault();
+            if (!isReady) return;
             showMenu();
         });
+        const spinner = document.createElement('div'); {
+            dom.triggerSpinner = spinner;
+            spinner.classList.add('stac--spinner');
+            spinner.classList.add('fa', 'fa-solid', 'fa-spin-pulse', 'fa-spinner');
+            trigger.append(spinner);
+        }
         document.body.append(trigger);
     }
     const panel = document.createElement('div'); {
@@ -806,10 +831,10 @@ const init = async()=>{
                                         del.classList.add('fa-solid', 'fa-fw');
                                         del.classList.add('fa-trash-can');
                                         del.title = 'Remove section';
-                                        del.addEventListener('click', ()=>{
+                                        del.addEventListener('click', async ()=>{
                                             if (settings.sectionList.includes(anchor)) {
                                                 settings.sectionList.splice(settings.sectionList.indexOf(anchor), 1);
-                                                settings.save();
+                                                await settings.save();
                                             }
                                             updateSectionPanel();
                                         });
@@ -884,7 +909,7 @@ const init = async()=>{
                                             q = qNew;
                                             idx++;
                                         }
-                                        segment.addEventListener('click', ()=>{
+                                        segment.addEventListener('click', async()=>{
                                             if (settings.sectionList.includes(s.trim())) {
                                                 settings.sectionList.splice(settings.sectionList.indexOf(s.trim()), 1);
                                             } else {
@@ -894,7 +919,7 @@ const init = async()=>{
                                                 if (insertIdx == -1) settings.sectionList.push(s.trim());
                                                 else settings.sectionList.splice(insertIdx, 0, s.trim());
                                             }
-                                            settings.save();
+                                            await settings.save();
                                             updateSectionPanel();
                                         });
                                         m.append(segment);
@@ -983,6 +1008,15 @@ const init = async()=>{
             }
             panel.append(form);
         }
+        const spinner = document.createElement('div'); {
+            dom.panelSpinner = spinner;
+            spinner.classList.add('stac--spinner');
+            const icon = document.createElement('div'); {
+                icon.classList.add('fa', 'fa-solid', 'fa-spin-pulse', 'fa-spinner');
+                spinner.append(icon);
+            }
+            panel.append(spinner);
+        }
         document.body.append(panel);
     }
     panel.style.setProperty('--fontSize', settings.fontSize.toString());
@@ -998,7 +1032,7 @@ const init = async()=>{
     panel.style.setProperty('--botColorText', settings.botColorText.toString());
     panel.style.setProperty('--botColorBgHeader', settings.botColorBgHeader.toString());
     panel.style.setProperty('--botColorTextHeader', settings.botColorTextHeader.toString());
-    onChatChanged();
+    await onChatChanged();
     eventSource.on(event_types.CHAT_CHANGED, ()=>(onChatChanged(), null));
 
     updateHeadLoop();
@@ -1033,5 +1067,7 @@ const init = async()=>{
             return '';
         },
     }));
+    dom.triggerSpinner.remove();
+    isReady = true;
 };
 eventSource.on(event_types.APP_READY, ()=>init());

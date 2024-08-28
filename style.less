@@ -27,6 +27,13 @@
 	&.stac--hasMenu {
 		z-index: 30010;
 	}
+
+	.stac--spinner {
+		position: absolute;
+		font-size: 0.75em;
+		inset: calc(1em / 6);
+		filter: invert(1);
+	}
 }
 
 .stac--menu {
@@ -406,6 +413,23 @@
 				}
 			}
 		}
+	}
+
+	.stac--spinner {
+		display: none;
+		justify-content: center;
+		align-items: center;
+		position: absolute;
+		backdrop-filter: blur(10px);
+		font-size: 5em;
+		inset: 0;
+		z-index: 1;
+		> div {
+			display: flex;
+		}
+	}
+	&.stac--isLoading .stac--spinner {
+		display: flex;
 	}
 }
 @keyframes stac--del-mes-target {

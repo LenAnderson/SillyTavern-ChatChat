@@ -1,3 +1,6 @@
+import { characters, getRequestHeaders, this_chid } from '../../../../../script.js';
+import { groups, selected_group } from '../../../../group-chats.js';
+import { uuidv4 } from '../../../../utils.js';
 import { waitForFrame } from './lib/wait.js';
 import { Message } from './Message.js';
 
@@ -20,15 +23,43 @@ export class Chat {
         return instance;
     }
 
+    static async load({ subdir, id }) {
+        const response = await fetch('/api/plugins/files/get', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                path: `~/user/ChatChat/${subdir}/${id}.ChatChat.json`,
+            }),
+        });
+        if (!response.ok) {
+            console.warn('[STAC]', `something went wrong\n[${response.statusText}] ${response.status}`);
+            return new Chat();
+        }
+        return Chat.from(await response.json());
+    }
 
 
 
+
+    /**@type {string} */ subdir = (selected_group ? groups.find(it=>it.id == selected_group)?.name : characters[this_chid]?.name) ?? '__UNKNOWN__';
+    /**@type {string} */ id = uuidv4();
     /**@type {string} */ title = 'New ChatChat';
     /**@type {number} */ createdOn = Date.now();
     /**@type {number} */ lastChatOn = Date.now();
     /**@type {Message} */ rootMessage;
-    //TODO remove messageList or turn it into a getter that flattens the swipe tree
-    /**@type {object[]} */ messageList = [];
+
+    get file() {
+        return {
+            subdir: this.subdir,
+            id: this.id,
+            title: this.title,
+            createdOn: this.createdOn,
+            lastChatOn: this.lastChatOn,
+            firstMessageOn: this.firstMessageOn,
+            lastMessageOn: this.lastMessageOn,
+            messageCount: this.messageCount,
+        };
+    }
 
     /**@type {Message} */
     get leafMessage() { return this.rootMessage?.leaf; }
@@ -58,11 +89,38 @@ export class Chat {
 
     toJSON() {
         return {
+            id: this.id,
             title: this.title,
             createdOn: this.createdOn,
             lastChatOn: this.lastChatOn,
             rootMessage: this.rootMessage,
         };
+    }
+
+    equals(that) {
+        return that.subdir == this.subdir && that.id == this.id;
+    }
+
+    async save() {
+        if (this.title == 'New ChatChat' && !this.rootMessage) return;
+        const subdir = this.subdir;
+        const blob = new Blob([JSON.stringify(this)], { type:'text' });
+        const reader = new FileReader();
+        const prom = new Promise(resolve=>reader.addEventListener('load', resolve));
+        reader.readAsDataURL(blob);
+        await prom;
+        const putResponse = await fetch('/api/plugins/files/put', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                path: `~/user/ChatChat/${subdir}/${this.id}.ChatChat.json`,
+                file: reader.result,
+            }),
+        });
+        if (!putResponse.ok) {
+            console.warn('[STAC]', `something went wrong\n[${putResponse.statusText}] ${putResponse.status}`);
+            return;
+        }
     }
 
 

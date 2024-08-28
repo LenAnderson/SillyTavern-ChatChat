@@ -371,7 +371,7 @@ export class Settings {
         }
     }
 
-    save() {
+    async save() {
         extension_settings.chatchat = {
             fontSize: this.fontSize,
             widthType: this.widthType,
@@ -391,7 +391,7 @@ export class Settings {
         };
         saveSettingsDebounced();
         if (chat_metadata) {
-            initMetadata();
+            await initMetadata();
             chat_metadata.chatchat.settings = {
                 scriptBefore: this.scriptBefore,
                 scriptAfter: this.scriptAfter,
