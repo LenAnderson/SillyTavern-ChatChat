@@ -115,6 +115,7 @@ export class Chat {
             body: JSON.stringify({
                 path: `~/user/ChatChat/${subdir}/${this.id}.ChatChat.json`,
                 file: reader.result,
+                overwrite: true,
             }),
         });
         if (!putResponse.ok) {
