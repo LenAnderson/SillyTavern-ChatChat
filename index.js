@@ -70,7 +70,10 @@ function isRole(mes, roles) {
  */
 const hookChat = (nc)=>{
     nc.onChange = async()=>{
-        await save();
+        await Promise.all([
+            nc.save(),
+            save(),
+        ]);
     };
     nc.onGenerate = async()=>{
         const usedHistory = currentChat.toFlat();
