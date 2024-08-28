@@ -428,15 +428,16 @@
 }
 .stac--head {
   background-color: #454545;
-  border-radius: 4px;
+  border-radius: 5px 5px 0 0;
+  margin-right: 2.25rem;
   display: flex;
   font-size: smaller;
   padding: 1px 3px;
-  opacity: 0.5;
   transition: 200ms;
   cursor: pointer;
 }
-.stac--head:hover {
+.stac--head:hover .stac--start,
+.stac--head:hover .stac--end {
   opacity: 1;
 }
 .stac--head .stac--start {
@@ -444,6 +445,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  opacity: 0.5;
 }
 .stac--head .stac--end {
   flex: 0 0 50%;
@@ -451,6 +453,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   direction: rtl;
+  opacity: 0.5;
 }
 .stac--form {
   flex: 0 0 auto;
@@ -465,7 +468,7 @@
   display: flex;
   flex-direction: column;
   background-color: var(--primaryBgCol);
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 0 5px 0;
   overflow: hidden;
   width: 2em;
 }
@@ -482,7 +485,7 @@
 }
 .stac--input {
   background-color: var(--inputColorBg);
-  border-radius: 5px 0 0 5px;
+  border-radius: 0 0 0 5px;
   color: var(--inputColorText);
   min-height: calc(3lh + 6px);
   max-height: 50dvh;

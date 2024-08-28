@@ -728,6 +728,42 @@ const init = async()=>{
     const panel = document.createElement('div'); {
         dom.panel = panel;
         panel.classList.add('stac--panel');
+        const messages = document.createElement('div'); {
+            dom.messages = messages;
+            messages.classList.add('stac--messages');
+            messages.addEventListener('click', async(evt)=>{
+                const copy = /**@type {HTMLElement}*/(evt.target);
+                if (copy.classList.contains('stac--copy') && copy.closest('.stac--blockquote')) {
+                    const text = copy.getAttribute('data-text');
+                    let ok = false;
+                    try {
+                        navigator.clipboard.writeText(text);
+                        ok = true;
+                    } catch {
+                        console.warn('/copy cannot use clipboard API, falling back to execCommand');
+                        const ta = document.createElement('textarea'); {
+                            ta.value = text;
+                            ta.style.position = 'fixed';
+                            ta.style.inset = '0';
+                            document.body.append(ta);
+                            ta.focus();
+                            ta.select();
+                            try {
+                                document.execCommand('copy');
+                                ok = true;
+                            } catch (err) {
+                                console.error('Unable to copy to clipboard', err);
+                            }
+                            ta.remove();
+                        }
+                    }
+                    copy.classList.add(`stac--${ok ? 'success' : 'failure'}`);
+                    await delay(1000);
+                    copy.classList.remove(`stac--${ok ? 'success' : 'failure'}`);
+                }
+            });
+            panel.append(messages);
+        }
         const head = document.createElement('div'); {
             dom.head = head;
             head.classList.add('stac--head');
@@ -885,42 +921,6 @@ const init = async()=>{
                 await dlg.show();
             });
             panel.append(head);
-        }
-        const messages = document.createElement('div'); {
-            dom.messages = messages;
-            messages.classList.add('stac--messages');
-            messages.addEventListener('click', async(evt)=>{
-                const copy = /**@type {HTMLElement}*/(evt.target);
-                if (copy.classList.contains('stac--copy') && copy.closest('.stac--blockquote')) {
-                    const text = copy.getAttribute('data-text');
-                    let ok = false;
-                    try {
-                        navigator.clipboard.writeText(text);
-                        ok = true;
-                    } catch {
-                        console.warn('/copy cannot use clipboard API, falling back to execCommand');
-                        const ta = document.createElement('textarea'); {
-                            ta.value = text;
-                            ta.style.position = 'fixed';
-                            ta.style.inset = '0';
-                            document.body.append(ta);
-                            ta.focus();
-                            ta.select();
-                            try {
-                                document.execCommand('copy');
-                                ok = true;
-                            } catch (err) {
-                                console.error('Unable to copy to clipboard', err);
-                            }
-                            ta.remove();
-                        }
-                    }
-                    copy.classList.add(`stac--${ok ? 'success' : 'failure'}`);
-                    await delay(1000);
-                    copy.classList.remove(`stac--${ok ? 'success' : 'failure'}`);
-                }
-            });
-            panel.append(messages);
         }
         const form = document.createElement('div'); {
             dom.form = form;

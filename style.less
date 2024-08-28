@@ -462,21 +462,24 @@
 
 .stac--head {
 	background-color: rgb(69, 69, 69);
-	border-radius: 4px;
+	border-radius: 5px 5px 0 0;
+	margin-right: 2.25rem;
 	display: flex;
 	font-size: smaller;
 	padding: 1px 3px;
-	opacity: 0.5;
 	transition: 200ms;
 	cursor: pointer;
 	&:hover {
-		opacity: 1;
+		.stac--start, .stac--end {
+			opacity: 1;
+		}
 	}
 	.stac--start {
 		flex: 0 0 50%;
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+		opacity: 0.5;
 	}
 	.stac--end {
 		flex: 0 0 50%;
@@ -484,6 +487,7 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 		direction: rtl;
+		opacity: 0.5;
 	}
 }
 
@@ -504,7 +508,7 @@
 		flex-direction: column;
 
 		background-color: var(--primaryBgCol);
-		border-radius: 0 5px 5px 0;
+		border-radius: 0 0 5px 0;
 		overflow: hidden;
 		width: 2em;
 	}
@@ -523,7 +527,7 @@
 }
 .stac--input {
 	background-color: var(--inputColorBg);
-	border-radius: 5px 0 0 5px;
+	border-radius: 0 0 0 5px;
 	color: var(--inputColorText);
 	min-height: calc(3lh + 6px); // 2*3px padding
 	max-height: 50dvh;
