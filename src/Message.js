@@ -2,6 +2,7 @@ import { messageFormatting } from '../../../../../script.js';
 import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay } from '../../../../utils.js';
+import morphdom from '../../../quick-reply/lib/morphdom-esm.js';
 import { settings } from '../index.js';
 import { waitForFrame } from './lib/wait.js';
 import { DELETE_ACTION } from './Settings.js';
@@ -360,6 +361,11 @@ export class Message {
     }
 
     updateContent(html) {
+        morphdom(
+            this.dom.content,
+            `<div>${html}</div>`,
+            { childrenOnly: true },
+        );
         this.dom.content.innerHTML = html;
     }
 
