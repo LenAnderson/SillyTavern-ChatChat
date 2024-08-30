@@ -862,243 +862,257 @@ const init = async()=>{
             });
             panel.append(messages);
         }
-        const head = document.createElement('div'); {
-            dom.head = head;
-            head.classList.add('stac--head');
-            head.addEventListener('click', async()=>{
-                const story = chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
-                const storyTexts = story.map(it=>getRegexedString(it.mes, regex_placement.AI_OUTPUT, { isPrompt: true }));
-                const storyText = storyTexts.join('\n');
-                const seg = new Intl.Segmenter('en', { granularity:'sentence' });
-                const storySegs = storyTexts.map(it=>[...seg.segment(it)].map(s=>s.segment));
-                let sections = [];
-                let domSectionPanel;
-                const updateSectionPanel = async()=>{
-                    sections = getSections();
-                    domSectionPanel.innerHTML = '';
-                    let idx = 0;
-                    for (const { anchor, text:storySection, section:sec } of sections) {
-                        idx++;
-                        const segs = [...seg.segment(storySection)].map(it=>it.segment);
-                        const first = document.createElement('div'); {
-                            first.classList.add('stac--section');
-                            const head = document.createElement('div'); {
-                                head.classList.add('stac--details');
-                                const title = document.createElement('div'); {
-                                    title.classList.add('stac--title');
-                                    if (sections.length > 1) {
-                                        title.textContent = `<Section-${idx}>`;
-                                        title.title = `anchor: ${anchor}`;
-                                    }
-                                    head.append(title);
-                                }
-                                const info = document.createElement('div'); {
-                                    info.classList.add('stac--info');
-                                    info.textContent = `${segs.length} sentences (~${await getTokenCountAsync(storySection)} tokens)`;
-                                    head.append(info);
-                                }
-                                const actions = document.createElement('div'); {
-                                    actions.classList.add('stac--actions');
-                                    const hide = document.createElement('div'); {
-                                        hide.classList.add('stac--action');
-                                        hide.classList.add('fa-solid', 'fa-fw');
-                                        if (sec?.isIncluded ?? true) hide.classList.add('fa-eye');
-                                        else hide.classList.add('fa-eye-slash');
-                                        hide.title = 'Remove section';
-                                        hide.addEventListener('click', async ()=>{
-                                            sec.isIncluded = !sec.isIncluded;
-                                            if (sec.isIncluded) {
-                                                hide.classList.add('fa-eye');
-                                                hide.classList.remove('fa-eye-slash');
-                                            } else {
-                                                hide.classList.remove('fa-eye');
-                                                hide.classList.add('fa-eye-slash');
-                                            }
-                                            await settings.save();
-                                        });
-                                        actions.append(hide);
-                                    }
-                                    const del = document.createElement('div'); {
-                                        del.classList.add('stac--action');
-                                        del.classList.add('fa-solid', 'fa-fw');
-                                        del.classList.add('fa-trash-can');
-                                        del.title = 'Remove section';
-                                        del.addEventListener('click', async ()=>{
-                                            if (settings.sectionList.map(it=>it.separator == anchor)) {
-                                                settings.sectionList.splice(settings.sectionList.findIndex(it=>it.separator == anchor), 1);
-                                                await settings.save();
-                                            }
-                                            updateSectionPanel();
-                                        });
-                                        actions.append(del);
-                                    }
-                                    head.append(actions);
-                                }
-                                first.append(head);
-                            }
-                            const start = document.createElement('div'); {
-                                start.classList.add('stac--start');
-                                const anchor = document.createElement('span'); {
-                                    anchor.classList.add('stac--anchor');
-                                    anchor.textContent = segs[0];
-                                    start.append(anchor);
-                                }
-                                for (const s of segs.slice(1, 4)) {
-                                    const segment = document.createElement('span'); {
-                                        segment.classList.add('stac--segment');
-                                        segment.textContent = s;
-                                        start.append(segment);
-                                    }
-                                }
-                                first.append(start);
-                            }
-                            const dots = document.createElement('div'); {
-                                dots.classList.add('stac--dots');
-                                dots.textContent = '[...]';
-                                first.append(dots);
-                            }
-                            const end = document.createElement('div'); {
-                                end.classList.add('stac--end');
-                                for (const s of segs.slice(-5)) {
-                                    const segment = document.createElement('span'); {
-                                        segment.classList.add('stac--segment');
-                                        segment.textContent = s;
-                                        end.append(segment);
-                                    }
-                                }
-                                first.append(end);
-                            }
-                            domSectionPanel.append(first);
-                        }
-                    }
-                };
-                const dom = document.createElement('div'); {
-                    dom.classList.add('stac--storyDlg');
-                    const storyPanel = document.createElement('div'); {
-                        storyPanel.classList.add('stac--col');
-                        storyPanel.classList.add('stac--story');
-                        storyPanel.classList.add('mes');
-                        for (const mes of storySegs) {
-                            const m = document.createElement('div'); {
-                                m.classList.add('stac--message');
-                                m.classList.add('mes_text');
-                                let q = false;
-                                let prev;
-                                for (const s of mes) {
-                                    const segment = document.createElement('span'); {
-                                        segment.classList.add('stac--segment');
-                                        const qParts = s.split('"');
-                                        let idx = 0;
-                                        for (const qp of qParts) {
-                                            let qNew = q;
-                                            if (idx > 0) qNew = !q;
-                                            if (prev && q && !qNew) prev.textContent += '"';
-                                            const el = document.createElement(qNew ? 'q' : 'span'); {
-                                                el.textContent = `${qNew && !q ? '"' : ''}${qp}`;
-                                                segment.append(el);
-                                            }
-                                            prev = el;
-                                            q = qNew;
-                                            idx++;
-                                        }
-                                        segment.addEventListener('click', async()=>{
-                                            if (settings.sectionList.find(it=>it.separator == s.trim())) {
-                                                settings.sectionList.splice(settings.sectionList.findIndex(it=>it.separator == s.trim()), 1);
-                                            } else {
-                                                const idxList = settings.sectionList.map(it=>storyText.indexOf(it.separator));
-                                                const idx = storyText.indexOf(s.trim());
-                                                const insertIdx = idxList.findIndex(it=>it > idx);
-                                                if (insertIdx == -1) settings.sectionList.push(Section.create(s.trim()));
-                                                else settings.sectionList.splice(insertIdx, 0, Section.create(s.trim()));
-                                            }
-                                            await settings.save();
-                                            updateSectionPanel();
-                                        });
-                                        m.append(segment);
-                                    }
-                                }
-                                storyPanel.append(m);
-                            }
-                        }
-                        dom.append(storyPanel);
-                    }
-                    const sectionPanel = document.createElement('div'); {
-                        domSectionPanel = sectionPanel;
-                        sectionPanel.classList.add('stac--col');
-                        sectionPanel.classList.add('stac--sections');
-                        updateSectionPanel();
-                        dom.append(sectionPanel);
-                    }
-                    // const previewPanel = document.createElement('div'); {
-                    //     previewPanel.classList.add('stac--col');
-                    //     dom.append(previewPanel);
-                    // }
-                }
-                const dlg = new Popup(dom, POPUP_TYPE.TEXT);
-                await dlg.show();
-            });
-            panel.append(head);
-        }
         const form = document.createElement('div'); {
             dom.form = form;
             form.classList.add('stac--form');
-            const inp = document.createElement('div'); {
-                dom.input = inp;
-                inp.contentEditable = 'plaintext-only';
-                inp.classList.add('stac--input');
-                inp.classList.add('text_pole');
-                inp.addEventListener('keydown', async(evt)=>{
-                    if (isBusy) return;
-                    evt.stopPropagation();
-                    if (!evt.shiftKey && !evt.ctrlKey && !evt.altKey && evt.key == 'ArrowRight') {
-                        if (document.activeElement == inp && inp.textContent == '') {
-                            /**@type {HTMLElement}*/(dom.messages.children[0]?.querySelector('.stac--swipeRight'))?.click();
+            const head = document.createElement('div'); {
+                dom.head = head;
+                head.classList.add('stac--head');
+                head.addEventListener('click', async()=>{
+                    const story = chat.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
+                    const storyTexts = story.map(it=>getRegexedString(it.mes, regex_placement.AI_OUTPUT, { isPrompt: true }));
+                    const storyText = storyTexts.join('\n');
+                    const seg = new Intl.Segmenter('en', { granularity:'sentence' });
+                    const storySegs = storyTexts.map(it=>[...seg.segment(it)].map(s=>s.segment));
+                    let sections = [];
+                    let domSectionPanel;
+                    const updateSectionPanel = async()=>{
+                        sections = getSections();
+                        domSectionPanel.innerHTML = '';
+                        let idx = 0;
+                        for (const { anchor, text:storySection, section:sec } of sections) {
+                            idx++;
+                            const segs = [...seg.segment(storySection)].map(it=>it.segment);
+                            const first = document.createElement('div'); {
+                                first.classList.add('stac--section');
+                                if (!(sec?.isIncluded ?? true)) first.classList.add('stac--hidden');
+                                const head = document.createElement('div'); {
+                                    head.classList.add('stac--details');
+                                    const title = document.createElement('div'); {
+                                        title.classList.add('stac--title');
+                                        if (sections.length > 1) {
+                                            title.textContent = `<Section-${idx}>`;
+                                            title.title = `anchor: ${anchor}`;
+                                        }
+                                        head.append(title);
+                                    }
+                                    const info = document.createElement('div'); {
+                                        info.classList.add('stac--info');
+                                        info.textContent = `${segs.length} sentences (~${await getTokenCountAsync(storySection)} tokens)`;
+                                        head.append(info);
+                                    }
+                                    const actions = document.createElement('div'); {
+                                        actions.classList.add('stac--actions');
+                                        if (sec) {
+                                            const hide = document.createElement('div'); {
+                                                hide.classList.add('stac--action');
+                                                hide.classList.add('stac--hide');
+                                                hide.classList.add('fa-solid', 'fa-fw');
+                                                if (sec?.isIncluded ?? true) hide.classList.add('fa-eye');
+                                                else hide.classList.add('fa-eye-slash');
+                                                hide.title = 'Remove section';
+                                                hide.addEventListener('click', async ()=>{
+                                                    sec.isIncluded = !sec.isIncluded;
+                                                    if (sec.isIncluded) {
+                                                        hide.classList.add('fa-eye');
+                                                        hide.classList.remove('fa-eye-slash');
+                                                        first.classList.remove('stac--hidden');
+                                                    } else {
+                                                        hide.classList.remove('fa-eye');
+                                                        hide.classList.add('fa-eye-slash');
+                                                        first.classList.add('stac--hidden');
+                                                    }
+                                                    await settings.save();
+                                                });
+                                                actions.append(hide);
+                                            }
+                                            const del = document.createElement('div'); {
+                                                del.classList.add('stac--action');
+                                                del.classList.add('fa-solid', 'fa-fw');
+                                                del.classList.add('fa-trash-can');
+                                                del.title = 'Remove section';
+                                                del.addEventListener('click', async ()=>{
+                                                    if (settings.sectionList.map(it=>it.separator == anchor)) {
+                                                        settings.sectionList.splice(settings.sectionList.findIndex(it=>it.separator == anchor), 1);
+                                                        await settings.save();
+                                                    }
+                                                    updateSectionPanel();
+                                                });
+                                                actions.append(del);
+                                            }
+                                        }
+                                        head.append(actions);
+                                    }
+                                }
+                                first.append(head);
+                                const content = document.createElement('div'); {
+                                    content.classList.add('stac--content');
+                                    const start = document.createElement('div'); {
+                                        start.classList.add('stac--start');
+                                        const anchor = document.createElement('span'); {
+                                            anchor.classList.add('stac--anchor');
+                                            anchor.textContent = segs[0];
+                                            start.append(anchor);
+                                        }
+                                        for (const s of segs.slice(1, 4)) {
+                                            const segment = document.createElement('span'); {
+                                                segment.classList.add('stac--segment');
+                                                segment.textContent = s;
+                                                start.append(segment);
+                                            }
+                                        }
+                                        content.append(start);
+                                    }
+                                    const dots = document.createElement('div'); {
+                                        dots.classList.add('stac--dots');
+                                        dots.textContent = '[...]';
+                                        content.append(dots);
+                                    }
+                                    const end = document.createElement('div'); {
+                                        end.classList.add('stac--end');
+                                        for (const s of segs.slice(-5)) {
+                                            const segment = document.createElement('span'); {
+                                                segment.classList.add('stac--segment');
+                                                segment.textContent = s;
+                                                end.append(segment);
+                                            }
+                                        }
+                                        content.append(end);
+                                    }
+                                    first.append(content);
+                                }
+                                domSectionPanel.append(first);
+                            }
                         }
-                        return;
-                    }
-                    if (!evt.shiftKey && !evt.ctrlKey && !evt.altKey && evt.key == 'ArrowLeft') {
-                        if (document.activeElement == inp && inp.textContent == '') {
-                            /**@type {HTMLElement}*/(dom.messages.children[0]?.querySelector('.stac--swipeLeft'))?.click();
+                    };
+                    const dom = document.createElement('div'); {
+                        dom.classList.add('stac--storyDlg');
+                        const storyPanel = document.createElement('div'); {
+                            storyPanel.classList.add('stac--col');
+                            storyPanel.classList.add('stac--story');
+                            storyPanel.classList.add('mes');
+                            for (const mes of storySegs) {
+                                const m = document.createElement('div'); {
+                                    m.classList.add('stac--message');
+                                    m.classList.add('mes_text');
+                                    let q = false;
+                                    let prev;
+                                    for (const s of mes) {
+                                        const segment = document.createElement('span'); {
+                                            segment.classList.add('stac--segment');
+                                            const qParts = s.split('"');
+                                            let idx = 0;
+                                            for (const qp of qParts) {
+                                                let qNew = q;
+                                                if (idx > 0) qNew = !q;
+                                                if (prev && q && !qNew) prev.textContent += '"';
+                                                const el = document.createElement(qNew ? 'q' : 'span'); {
+                                                    el.textContent = `${qNew && !q ? '"' : ''}${qp}`;
+                                                    segment.append(el);
+                                                }
+                                                prev = el;
+                                                q = qNew;
+                                                idx++;
+                                            }
+                                            segment.addEventListener('click', async()=>{
+                                                if (settings.sectionList.find(it=>it.separator == s.trim())) {
+                                                    settings.sectionList.splice(settings.sectionList.findIndex(it=>it.separator == s.trim()), 1);
+                                                } else {
+                                                    const idxList = settings.sectionList.map(it=>storyText.indexOf(it.separator));
+                                                    const idx = storyText.indexOf(s.trim());
+                                                    const insertIdx = idxList.findIndex(it=>it > idx);
+                                                    if (insertIdx == -1) settings.sectionList.push(Section.create(s.trim()));
+                                                    else settings.sectionList.splice(insertIdx, 0, Section.create(s.trim()));
+                                                }
+                                                await settings.save();
+                                                updateSectionPanel();
+                                            });
+                                            m.append(segment);
+                                        }
+                                    }
+                                    storyPanel.append(m);
+                                }
+                            }
+                            dom.append(storyPanel);
                         }
-                        return;
+                        const sectionPanel = document.createElement('div'); {
+                            domSectionPanel = sectionPanel;
+                            sectionPanel.classList.add('stac--col');
+                            sectionPanel.classList.add('stac--sections');
+                            updateSectionPanel();
+                            dom.append(sectionPanel);
+                        }
+                        // const previewPanel = document.createElement('div'); {
+                        //     previewPanel.classList.add('stac--col');
+                        //     dom.append(previewPanel);
+                        // }
                     }
-                    if (evt.shiftKey || evt.ctrlKey || evt.altKey || evt.key != 'Enter') return;
-                    evt.preventDefault();
-                    const text = dom.input.textContent;
-                    dom.input.textContent = '';
-                    await send(text);
-                    dom.input.focus();
+                    const dlg = new Popup(dom, POPUP_TYPE.TEXT);
+                    await dlg.show();
                 });
-                form.append(inp);
+                form.append(head);
             }
-            const actions = document.createElement('div'); {
-                actions.classList.add('stac--actions');
-                const historyBtn = document.createElement('div'); {
-                    dom.historyBtn = historyBtn;
-                    historyBtn.classList.add('stac--action');
-                    historyBtn.classList.add('menu_button');
-                    historyBtn.classList.add('fa-solid', 'fa-clock-rotate-left');
-                    historyBtn.title = 'Input history';
-                    historyBtn.addEventListener('click', async(evt)=>{
-                        showHistoryMenu();
-                    });
-                    actions.append(historyBtn);
-                }
-                const sendBtn = document.createElement('div'); {
-                    sendBtn.classList.add('stac--action');
-                    sendBtn.classList.add('menu_button');
-                    sendBtn.classList.add('fa-solid', 'fa-paper-plane');
-                    sendBtn.title = 'Send message';
-                    sendBtn.addEventListener('click', async()=>{
+            const main = document.createElement('div'); {
+                main.classList.add('stac--main');
+                const inp = document.createElement('div'); {
+                    dom.input = inp;
+                    inp.contentEditable = 'plaintext-only';
+                    inp.classList.add('stac--input');
+                    inp.classList.add('text_pole');
+                    inp.addEventListener('keydown', async(evt)=>{
                         if (isBusy) return;
+                        evt.stopPropagation();
+                        if (!evt.shiftKey && !evt.ctrlKey && !evt.altKey && evt.key == 'ArrowRight') {
+                            if (document.activeElement == inp && inp.textContent == '') {
+                                /**@type {HTMLElement}*/(dom.messages.children[0]?.querySelector('.stac--swipeRight'))?.click();
+                            }
+                            return;
+                        }
+                        if (!evt.shiftKey && !evt.ctrlKey && !evt.altKey && evt.key == 'ArrowLeft') {
+                            if (document.activeElement == inp && inp.textContent == '') {
+                                /**@type {HTMLElement}*/(dom.messages.children[0]?.querySelector('.stac--swipeLeft'))?.click();
+                            }
+                            return;
+                        }
+                        if (evt.shiftKey || evt.ctrlKey || evt.altKey || evt.key != 'Enter') return;
+                        evt.preventDefault();
                         const text = dom.input.textContent;
                         dom.input.textContent = '';
                         await send(text);
                         dom.input.focus();
                     });
-                    actions.append(sendBtn);
+                    main.append(inp);
                 }
-                form.append(actions);
+                const actions = document.createElement('div'); {
+                    actions.classList.add('stac--actions');
+                    const historyBtn = document.createElement('div'); {
+                        dom.historyBtn = historyBtn;
+                        historyBtn.classList.add('stac--action');
+                        historyBtn.classList.add('menu_button');
+                        historyBtn.classList.add('fa-solid', 'fa-clock-rotate-left');
+                        historyBtn.title = 'Input history';
+                        historyBtn.addEventListener('click', async(evt)=>{
+                            showHistoryMenu();
+                        });
+                        actions.append(historyBtn);
+                    }
+                    const sendBtn = document.createElement('div'); {
+                        sendBtn.classList.add('stac--action');
+                        sendBtn.classList.add('menu_button');
+                        sendBtn.classList.add('fa-solid', 'fa-paper-plane');
+                        sendBtn.title = 'Send message';
+                        sendBtn.addEventListener('click', async()=>{
+                            if (isBusy) return;
+                            const text = dom.input.textContent;
+                            dom.input.textContent = '';
+                            await send(text);
+                            dom.input.focus();
+                        });
+                        actions.append(sendBtn);
+                    }
+                    main.append(actions);
+                }
+                form.append(main);
             }
             panel.append(form);
         }

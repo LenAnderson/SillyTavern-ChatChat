@@ -495,7 +495,7 @@
 .stac--head {
 	background-color: rgb(69, 69, 69);
 	border-radius: 5px 5px 0 0;
-	margin-right: 2.25rem;
+	// margin-right: 2.25rem;
 	display: flex;
 	font-size: smaller;
 	padding: 1px 3px;
@@ -527,6 +527,7 @@
 	flex: 0 0 auto;
 
 	display: flex;
+	flex-direction: column;
 
 	margin-right: 2.25rem;
 	position: relative;
@@ -535,7 +536,18 @@
 		outline: -webkit-focus-ring-color auto 1px;
 	}
 
+	.stac--main {
+		flex: 1 1 auto;
+
+		display: flex;
+		flex-direction: row;
+
+		overflow: hidden;
+	}
+
 	.stac--actions {
+		flex: 0 0 auto;
+
 		display: flex;
 		flex-direction: column;
 
