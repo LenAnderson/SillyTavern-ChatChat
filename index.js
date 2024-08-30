@@ -187,12 +187,14 @@ const onChatChanged = async()=>{
 const updateHeadLoop = async()=>{
     let oldText;
     while (true) {
-        const allSections = getSections();
-        const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
-        const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
-        if (oldText != storyText) {
-            updateHead();
-            oldText = storyText;
+        if (!isBusy) {
+            const allSections = getSections();
+            const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
+            const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
+            if (oldText != storyText) {
+                updateHead();
+                oldText = storyText;
+            }
         }
         await delay(500);
     }
