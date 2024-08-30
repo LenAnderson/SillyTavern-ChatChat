@@ -376,9 +376,9 @@ const gen = async(history, userText, bm)=>{
     const sections = getSections(chat).filter(it=>it.section?.isIncluded ?? true);
     let story = '';
     if (sections.length == 1) {
-        story = sections[0].text;
+        story = getRegexedString(sections[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
     } else if (sections.length > 1) {
-        story = sections.map((it,idx)=>`<Section-${idx + 1}>\n${it.text}\n</Section-${idx + 1}>`).join('\n');
+        story = sections.map((it,idx)=>`<Section-${idx + 1}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${idx + 1}>`).join('\n');
     }
     for (const mes of chat) {
         //TODO use getTokenCountAsync('...') to limit tokens
@@ -412,7 +412,7 @@ const gen = async(history, userText, bm)=>{
         const id = `chatchat-history-${historyInjects.length}`;
         const args = [
             id,
-            h.text,
+            getRegexedString(h.text, regex_placement.AI_OUTPUT, { isPrompt: true }),
             extension_prompt_types.IN_CHAT,
             history.length - historyInjects.length + 1,
             true,
