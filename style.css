@@ -459,7 +459,6 @@
 .stac--head {
   background-color: #454545;
   border-radius: 5px 5px 0 0;
-  margin-right: 2.25rem;
   display: flex;
   font-size: smaller;
   padding: 1px 3px;
@@ -488,13 +487,21 @@
 .stac--form {
   flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
   margin-right: 2.25rem;
   position: relative;
 }
 .stac--form:has(:focus-visible) {
   outline: -webkit-focus-ring-color auto 1px;
 }
+.stac--form .stac--main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
 .stac--form .stac--actions {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   background-color: var(--primaryBgCol);
@@ -732,6 +739,10 @@ body .stac--storyDlg .stac--sections .stac--details {
 body .stac--storyDlg .stac--sections .stac--title {
   font-family: var(--monoFontFamily);
 }
+body .stac--storyDlg .stac--sections .stac--actions {
+  display: flex;
+  gap: 1em;
+}
 body .stac--storyDlg .stac--sections .stac--action {
   cursor: pointer;
   opacity: 0.5;
@@ -739,6 +750,13 @@ body .stac--storyDlg .stac--sections .stac--action {
 }
 body .stac--storyDlg .stac--sections .stac--action:hover {
   opacity: 1;
+}
+body .stac--storyDlg .stac--sections .stac--hidden .stac--action.stac--hide {
+  color: red;
+  opacity: 1;
+}
+body .stac--storyDlg .stac--sections .stac--hidden .stac--content {
+  opacity: 0.25;
 }
 body .stac--storyDlg .stac--sections .stac--anchor {
   font-weight: bold;
