@@ -432,15 +432,24 @@ const gen = async(history, userText, bm)=>{
     let botMes;
     const idx = chat.length;
     let isDone = false;
-    let mo;
+    let original;
+    let proxy;
     try {
         const prom = Generate('normal').then(()=>isDone = true);
         let mes;
         while (!isDone && !mes) {
             mes = document.querySelector(`#chat .mes[mesid="${idx}"] .mes_text`);
             if (mes) {
-                mo = new MutationObserver(()=>bm.updateContent(mes.innerHTML));
-                mo.observe(mes, { characterData:true, childList:true, subtree:true });
+                original = chat[idx];
+                proxy = new Proxy(original, {
+                    set: (target, p, newValue, receiver)=>{
+                        if (p == 'mes') {
+                            bm.updateText(newValue);
+                        }
+                        return Reflect.set(target, p, newValue, receiver);
+                    },
+                });
+                chat[idx] = proxy;
             }
             await delay(100);
         }
@@ -449,17 +458,20 @@ const gen = async(history, userText, bm)=>{
         console.error('[STAC]', ex);
         toastr.error(ex.message, 'ChatChat');
     }
-    mo?.disconnect();
 
-    // save the bot mesage
-    botMes = structuredClone(chat.slice(-1)[0]);
-    dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
+    if (original) {
+        // save the bot message
+        botMes = structuredClone(original);
+        dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
+    }
 
     // restore original chat array
     chat.splice(0, chatClone.length, ...chatClone);
 
-    // remove the messages ChatChat had added to regular chat
-    await executeSlashCommandsWithOptions(`/cut ${chatClone.length}-{{lastMessageId}}`);
+    if (chat.length > chatClone.length) {
+        // remove the messages ChatChat had added to regular chat
+        await executeSlashCommandsWithOptions(`/cut ${chatClone.length}-{{lastMessageId}}`);
+    }
     // remove the style to hide those messages
     style.remove();
 
@@ -1181,3 +1193,18 @@ const init = async()=>{
     isReady = true;
 };
 eventSource.on(event_types.APP_READY, ()=>init());
+
+
+for (const e of Object.values(event_types)) {
+    eventSource.on(e, ()=>console.warn('[_EVENT_]', e, chat.length));
+}
+(async()=>{
+    let len = chat.length;
+    while (true) {
+        if (len != chat.length) {
+            console.warn('[_LEN_]', chat.length);
+            len = chat.length;
+        }
+        await delay(100);
+    }
+})();

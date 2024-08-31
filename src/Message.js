@@ -369,6 +369,13 @@ export class Message {
         this.dom.content.innerHTML = html;
     }
 
+    updateText(text) {
+        if (this.text != text) {
+            this.text = text;
+            this.dom.content.innerHTML = this.messageFormatting();
+        }
+    }
+
 
     messageFormatting() {
         let messageText = this.text;
