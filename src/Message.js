@@ -342,8 +342,13 @@ export class Message {
             }
         } else {
             this.text = this.editor.textContent;
-            this.#dom.content.innerHTML = this.messageFormatting();
-            this.editor.replaceWith(this.#dom.content);
+            const html = this.messageFormatting();
+            morphdom(
+                this.dom.content,
+                `<div>${html}</div>`,
+                { childrenOnly: true },
+            );
+            this.editor.replaceWith(this.dom.content);
             this.editor = null;
             this.onChange();
             this.isEditing = false;
@@ -366,13 +371,17 @@ export class Message {
             `<div>${html}</div>`,
             { childrenOnly: true },
         );
-        this.dom.content.innerHTML = html;
     }
 
     updateText(text) {
         if (this.text != text) {
             this.text = text;
-            this.dom.content.innerHTML = this.messageFormatting();
+            const html = this.messageFormatting();
+            morphdom(
+                this.dom.content,
+                `<div>${html}</div>`,
+                { childrenOnly: true },
+            );
         }
     }
 
@@ -817,7 +826,14 @@ export class Message {
     updateRender(oldProps = null) {
         this.render();
         if (oldProps && oldProps.send_date != this.sendDate) this.dom.date.textContent = this.sendDate;
-        if (oldProps && oldProps.mes != this.text) this.dom.content.innerHTML = this.messageFormatting();
+        if (oldProps && oldProps.mes != this.text) {
+            const html = this.messageFormatting();
+            morphdom(
+                this.dom.content,
+                `<div>${html}</div>`,
+                { childrenOnly: true },
+            );
+        }
         this.dom.swipes.textContent = `${this.swipeIndex + 1} / ${(this.swipeList.length)}`;
         if (this.dom.avatar) this.dom.avatar.src = `/thumbnail?type=avatar&file=${this.character ?? Message.defaultCharacter}`;
     }
