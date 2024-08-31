@@ -4,6 +4,7 @@ import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay, escapeRegex, uuidv4 } from '../../../../utils.js';
 import morphdom from '../../../quick-reply/lib/morphdom-esm.js';
 import { isBusy, settings } from '../index.js';
+import { stringSplice } from './lib/stringSplice.js';
 import { waitForFrame } from './lib/wait.js';
 import { DELETE_ACTION } from './Settings.js';
 
@@ -388,29 +389,110 @@ export class Message {
 
     messageFormatting() {
         let messageText = this.text;
-        const html = document
-            .createRange()
-            .createContextualFragment(messageText)
-        ;
-        const tags = [];
+
+        // regex-step through the text to do multiple things:
+        // 1) attempt to close unclosed tags
+        // 2) collect custom tags (to hide them from showdown)
+        const re = /(?<code>```)|(?<inlineCode>`)|(?<newline>\n)|<\/(?<closer>[^/>\s]+)>|<(?<tag>[^/>\s]+)(?<attributes>\s[^/>]+)?>/;
+        /**@type {RegExpExecArray} */
+        let match;
+        let remaining = messageText;
+        let close = [];
+        let inCode = false;
+        let inInlineCode = false;
+        const codeTagMap = {};
         const tagMap = {};
-        const subUnknown = (root)=>{
-            for (const el of [...root.children]) {
-                subUnknown(el);
+        const codeTags = [];
+        const codeReplace = [];
+        const tags = [];
+        const replace = [];
+        let isCustomTag = {};
+        let offset = 0;
+        while ((match = re.exec(remaining)) != null) {
+            const groups = /**@type {{code:string, inlineCode:string, newline:string, closer:string, tag:string, attributes:string}} */(match.groups);
+            remaining = remaining.slice(match.index + match[0].length);
+            const newOffset = offset + match.index + match[0].length;
+            // independent of the rest, if we encounter a tag we check if it is a custom tag
+            if (groups.tag) {
+                if (isCustomTag[groups.tag] === undefined) {
+                    // don't do anything if we already know about this tag
+                    if (groups.tag.includes('-')) {
+                        // tags with a dash are always custom
+                        isCustomTag[groups.tag] = true;
+                    } else {
+                        // without dash we need to check the resulting class
+                        const el = document.createElement(groups.tag);
+                        isCustomTag[groups.tag] = (el instanceof HTMLUnknownElement);
+                    }
+                }
             }
-            if (root instanceof HTMLUnknownElement || root?.tagName?.includes('-')) {
-                const match = /^(<.+?>).*(<\/.+?>)$/s.exec(root.outerHTML);
-                if (!tags.includes(match[1])) tags.push(match[1]);
-                if (!tags.includes(match[2])) tags.push(match[2]);
+            if (inCode) {
+                if (groups.code) {
+                    inCode = false;
+                } else if (groups.tag) {
+                    // record tag for replacement
+                    const fullTag = match[0];
+                    if (!codeTags.includes(fullTag)) codeTags.push(fullTag);
+                    codeReplace.push({ tag: fullTag, index: offset + match.index, length: fullTag.length, tagMap: codeTagMap });
+                } else if (groups.closer) {
+                    // record closing tag for replacement
+                    const fullTag = match[0];
+                    if (!codeTags.includes(fullTag)) codeTags.push(fullTag);
+                    codeReplace.push({ tag: fullTag, index: offset + match.index, length: fullTag.length, tagMap: codeTagMap });
+                }
+            } else if (inInlineCode) {
+                if (groups.inlineCode || groups.newline) inInlineCode = false;
+            } else {
+                if (groups.code) {
+                    inCode = true;
+                } else if (groups.inlineCode) {
+                    inInlineCode = true;
+                } else if (groups.tag) {
+                    // record tag for replacement
+                    const fullTag = match[0];
+                    if (!tags.includes(fullTag)) tags.push(fullTag);
+                    replace.push({ tag: fullTag, index: offset + match.index, length: fullTag.length, tagMap: tagMap });
+                    // check for closing
+                    const tag = groups.tag;
+                    const closeRe = new RegExp(escapeRegex(`</${tag}>`));
+                    const closeMatch = closeRe.exec(remaining);
+                    if (closeMatch) {
+                        // record closing tag for replacement
+                        const fullTag = closeMatch[0];
+                        if (!tags.includes(fullTag)) tags.push(fullTag);
+                        replace.push({ tag: fullTag, index: newOffset + closeMatch.index, length: fullTag.length, tagMap: tagMap });
+                        // remove closing tag from remaining text
+                        remaining = `${remaining.slice(0, closeMatch.index)}${' '.repeat(closeMatch[0].length)}${remaining.slice(closeMatch.index + closeMatch[0].length)}`;
+                    } else {
+                        // record missing closing tag for closing at the end
+                        close.push(tag);
+                    }
+                }
             }
-        };
-        subUnknown(html);
-        for (const tag of tags) {
-            const id = uuidv4();
-            tagMap[tag] = id;
-            messageText = messageText.replace(new RegExp(escapeRegex(tag), 'ig'), `§§§${id}§§§`);
+            offset = newOffset;
+        }
+        for (const tag of close.toReversed()) {
+            // record closing tag for replacement
+            const fullTag = `</${tag}>`;
+            if (!tags.includes(fullTag)) tags.push(fullTag);
+            replace.push({ tag: fullTag, index: messageText.length, length: fullTag.length, tagMap: tagMap });
+            // add closing tag to text
+            messageText += fullTag;
         }
 
+        // need to start repacements at the back, because the text gets longer with each replacement
+        const joinedReplace = [...codeReplace, ...replace].toSorted((a,b)=>a.index - b.index);
+        for (const { index, length, tag, tagMap } of joinedReplace.toReversed()) {
+            if (tagMap[tag] === undefined) {
+                tagMap[tag] = uuidv4();
+            }
+            const id = tagMap[tag];
+            messageText = stringSplice(messageText, index, length, `§§§${id}§§§`);
+        }
+
+        // handle blockquotes ourselves, two reasons:
+        // 1) showdown continues blockquote even when the next line does not start with '> '
+        // 2) add copy button
         const lines = messageText.split('\n');
         /**@type {{type:string, lines:string[]}[]} */
         const parts = [];
@@ -460,12 +542,18 @@ export class Message {
             })
             .join('\n')
         ;
-        for (const tag of tags) {
+
+        // restore custom tags in codeblocks and inline-code
+        for (const [tag, id] of Object.entries(codeTagMap)) {
+            messageText = messageText.replaceAll(`§§§${id}§§§`, tag.replace('<', '&lt;').replace('>', '&gt;'));
+        }
+        // restore custom tags and add annotations
+        for (const [tag, id] of Object.entries(tagMap)) {
             const div = tag.replace(/^<(\/?)(\S+)(\s+[^>]+)?>$/, (_, close, tag, attributes)=>{
                 if (close) return `<div class="stac--tag-close" data-tag="${tag}"></div></div>`;
                 return `<div class="stac--custom" data-tag="${tag}" ${attributes ?? ''}><div class="stac--tag" data-tag="${tag}"></div>`;
             });
-            messageText = messageText.replaceAll(`§§§${tagMap[tag]}§§§`, div);
+            messageText = messageText.replaceAll(`§§§${id}§§§`, div);
         }
         return messageText;
     }
