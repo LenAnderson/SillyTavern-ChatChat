@@ -215,6 +215,7 @@
   opacity: 1;
 }
 .stac--panel .stac--messages > .stac--message .stac--content .stac--custom {
+  border: 0.1px solid transparent;
   transition: 200ms;
   position: relative;
 }
@@ -255,7 +256,7 @@
 .stac--panel .stac--messages > .stac--message .stac--content .stac--custom .stac--tag-close::after {
   content: "</" attr(data-tag) ">";
   position: absolute;
-  bottom: 1em;
+  bottom: 0;
   right: -0.4em;
   font-size: 0.6em;
   line-height: 1;
