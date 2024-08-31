@@ -290,7 +290,7 @@
   padding-left: 10px;
 }
 .stac--panel .stac--messages .stac--user .stac--details .stac--actions {
-  padding-left: calc(3em / 0.75);
+  width: calc(12.5em + 3em / 0.75);
 }
 .stac--panel .stac--messages .stac--details {
   display: flex;
@@ -310,8 +310,8 @@
   font-size: 0.75em;
   opacity: 0.5;
 }
-.stac--panel .stac--messages .stac--details .stac--actions,
-.stac--panel .stac--messages .stac--details .stac--nav {
+.stac--panel .stac--messages .stac--details .stac--nav,
+.stac--panel .stac--messages .stac--details .stac--actions {
   font-size: 0.75em;
   display: flex;
   gap: 0.5em;
@@ -319,6 +319,10 @@
 }
 .stac--panel .stac--messages .stac--details .stac--nav {
   flex: 1 1 auto;
+  justify-content: end;
+}
+.stac--panel .stac--messages .stac--details .stac--actions {
+  width: 12.5em;
   justify-content: end;
 }
 .stac--panel .stac--messages .stac--details .stac--info {
