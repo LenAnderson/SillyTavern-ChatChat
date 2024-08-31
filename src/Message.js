@@ -1,7 +1,7 @@
 import { messageFormatting } from '../../../../../script.js';
 import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
-import { delay } from '../../../../utils.js';
+import { delay, escapeRegex, uuidv4 } from '../../../../utils.js';
 import morphdom from '../../../quick-reply/lib/morphdom-esm.js';
 import { isBusy, settings } from '../index.js';
 import { waitForFrame } from './lib/wait.js';
@@ -371,7 +371,31 @@ export class Message {
 
 
     messageFormatting() {
-        const lines = this.text.split('\n');
+        let messageText = this.text;
+        const html = document
+            .createRange()
+            .createContextualFragment(messageText)
+        ;
+        const tags = [];
+        const tagMap = {};
+        const subUnknown = (root)=>{
+            for (const el of [...root.children]) {
+                subUnknown(el);
+            }
+            if (root instanceof HTMLUnknownElement || root?.tagName?.includes('-')) {
+                const match = /^(<.+?>).*(<\/.+?>)$/s.exec(root.outerHTML);
+                if (!tags.includes(match[1])) tags.push(match[1]);
+                if (!tags.includes(match[2])) tags.push(match[2]);
+            }
+        };
+        subUnknown(html);
+        for (const tag of tags) {
+            const id = uuidv4();
+            tagMap[tag] = id;
+            messageText = messageText.replace(new RegExp(escapeRegex(tag), 'ig'), `§§§${id}§§§`);
+        }
+
+        const lines = messageText.split('\n');
         /**@type {{type:string, lines:string[]}[]} */
         const parts = [];
         /**@type {{type:string, lines:string[]}} */
@@ -394,7 +418,7 @@ export class Message {
                 }
             }
         }
-        return parts
+        messageText = parts
             .map(part=>{
                 switch (part.type) {
                     case 'blockquote': {
@@ -420,6 +444,14 @@ export class Message {
             })
             .join('\n')
         ;
+        for (const tag of tags) {
+            const div = tag.replace(/^<(\/?)(\S+)(\s+[^>]+)?>$/, (_, close, tag, attributes)=>{
+                if (close) return `<div class="stac--tag-close" data-tag="${tag}"></div></div>`;
+                return `<div class="stac--custom" data-tag="${tag}" ${attributes ?? ''}><div class="stac--tag" data-tag="${tag}"></div>`;
+            });
+            messageText = messageText.replaceAll(`§§§${tagMap[tag]}§§§`, div);
+        }
+        return messageText;
     }
 
     /**

@@ -232,6 +232,61 @@
 						}
 					}
 				}
+
+				.stac--custom {
+					transition: 200ms;
+					position: relative;
+					&:hover {
+						// background-color: rgb(from var(--SmartThemeQuoteColor) r g b / 0.125);
+						> .stac--tag, > .stac--tag-close {
+							&::after {
+								opacity: 0.9;
+							}
+						}
+					}
+					.stac--tag {
+						float: right;
+						position: sticky;
+						height: 0;
+						width: 100%;
+						top: 2em;
+						&::after {
+							content: "<"attr(data-tag)">";
+							position: absolute;
+							top: -1.2em;
+							right: -0.4em;
+							font-size: 0.6em;
+							line-height: 1;
+							border-radius: 5px;
+							background: var(--SmartThemeChatTintColor);
+							color: var(--SmartThemeQuoteColor);
+							padding: 0.4em;
+							opacity: 0.25;
+							cursor: default;
+							transition: 200ms;
+						}
+					}
+					.stac--tag-close {
+						float: right;
+						height: 0;
+						width: 100%;
+						&::after {
+							content: "</"attr(data-tag)">";
+							position: absolute;
+							top: 1.2em;
+							right: -0.4em;
+							font-size: 0.6em;
+							line-height: 1;
+							border-radius: 5px;
+							background: var(--SmartThemeChatTintColor);
+							color: var(--SmartThemeQuoteColor);
+							padding: 0.4em;
+							opacity: 0.25;
+							cursor: default;
+							transition: 200ms;
+						}
+					}
+				}
 			}
 		}
 
