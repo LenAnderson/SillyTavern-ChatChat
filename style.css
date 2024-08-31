@@ -223,6 +223,7 @@
   opacity: 0.9;
 }
 .stac--panel .stac--messages > .stac--message .stac--content .stac--custom .stac--tag {
+  pointer-events: none;
   float: right;
   position: sticky;
   height: 0;
@@ -245,14 +246,16 @@
   transition: 200ms;
 }
 .stac--panel .stac--messages > .stac--message .stac--content .stac--custom .stac--tag-close {
+  pointer-events: none;
   float: right;
   height: 0;
   width: 100%;
+  position: relative;
 }
 .stac--panel .stac--messages > .stac--message .stac--content .stac--custom .stac--tag-close::after {
   content: "</" attr(data-tag) ">";
   position: absolute;
-  top: 1.2em;
+  bottom: 1em;
   right: -0.4em;
   font-size: 0.6em;
   line-height: 1;

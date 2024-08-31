@@ -245,6 +245,7 @@
 						}
 					}
 					.stac--tag {
+						pointer-events: none;
 						float: right;
 						position: sticky;
 						height: 0;
@@ -267,13 +268,15 @@
 						}
 					}
 					.stac--tag-close {
+						pointer-events: none;
 						float: right;
 						height: 0;
 						width: 100%;
+						position: relative;
 						&::after {
 							content: "</"attr(data-tag)">";
 							position: absolute;
-							top: 1.2em;
+							bottom: 1em;
 							right: -0.4em;
 							font-size: 0.6em;
 							line-height: 1;
