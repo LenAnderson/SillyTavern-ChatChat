@@ -315,6 +315,35 @@ export class Message {
         }
     }
 
+    performDelete(da) {
+        switch (da) {
+            case DELETE_ACTION.DELETE_MESSAGE: {
+                this.onDelete(false);
+                this.renderOut();
+                break;
+            }
+            case DELETE_ACTION.DELETE_BRANCH: {
+                this.onDelete(true);
+                this.renderOut();
+                break;
+            }
+            case DELETE_ACTION.DELETE_SWIPE: {
+                if (this.swipeList.length < 2) return;
+                const oldSwipe = this.swipe;
+                this.swipeList.splice(this.swipeIndex, 1);
+                if (this.swipeList.length > this.swipeIndex) {
+                    // swipes to the right available, switch to next swipe
+                } else {
+                    this.swipeIndex--;
+                }
+                this.updateRender(oldSwipe.data);
+                this.onSwipe(oldSwipe);
+                this.onChange();
+                break;
+            }
+        }
+    }
+
     toggleEditor() {
         if (!this.isEditing) {
             this.isEditing = true;
@@ -655,7 +684,7 @@ export class Message {
                                             opt.title = t[1];
                                             opt.addEventListener('click', ()=>{
                                                 hideDelMenu();
-                                                performDelete(t[1]);
+                                                this.performDelete(t[1]);
                                             });
                                             for (const idx of [1, 2, 3, 4]) {
                                                 const m = document.createElement('div'); {
@@ -671,34 +700,6 @@ export class Message {
                                     menu.classList.add('stac--active');
                                 }
                             };
-                            const performDelete = (da)=>{
-                                switch (da) {
-                                    case DELETE_ACTION.DELETE_MESSAGE: {
-                                        this.onDelete(false);
-                                        this.renderOut();
-                                        break;
-                                    }
-                                    case DELETE_ACTION.DELETE_BRANCH: {
-                                        this.onDelete(true);
-                                        this.renderOut();
-                                        break;
-                                    }
-                                    case DELETE_ACTION.DELETE_SWIPE: {
-                                        if (this.swipeList.length < 2) return;
-                                        const oldSwipe = this.swipe;
-                                        this.swipeList.splice(this.swipeIndex, 1);
-                                        if (this.swipeList.length > this.swipeIndex) {
-                                            // swipes to the right available, switch to next swipe
-                                        } else {
-                                            this.swipeIndex--;
-                                        }
-                                        this.updateRender(oldSwipe.data);
-                                        this.onSwipe(oldSwipe);
-                                        this.onChange();
-                                        break;
-                                    }
-                                }
-                            };
                             del.addEventListener('click', async(evt)=>{
                                 if (isBusy) return;
                                 switch (settings.deleteAction) {
@@ -707,7 +708,7 @@ export class Message {
                                         break;
                                     }
                                     default: {
-                                        performDelete(settings.deleteAction);
+                                        this.performDelete(settings.deleteAction);
                                         break;
                                     }
                                 }
@@ -870,12 +871,14 @@ export class Message {
                             actions.append(swipes);
                         }
                         const swipeRight = document.createElement('div'); {
-                            if (isBusy) return;
                             swipeRight.classList.add('stac--action');
                             swipeRight.classList.add('stac--swipeRight');
                             swipeRight.classList.add('fa-solid', 'fa-chevron-right');
                             swipeRight.title = 'Show or generate / write next swipe';
-                            swipeRight.addEventListener('click', ()=>this.nextSwipe());
+                            swipeRight.addEventListener('click', ()=>{
+                                if (isBusy) return;
+                                this.nextSwipe();
+                            });
                             actions.append(swipeRight);
                         }
                         const edit = document.createElement('div'); {

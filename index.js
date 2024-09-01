@@ -12,7 +12,7 @@ import { Chat } from './src/Chat.js';
 import { waitForFrame } from './src/lib/wait.js';
 import { Message } from './src/Message.js';
 import { Section } from './src/Section.js';
-import { Settings, STORY_POSITION, WIDTH_TYPE } from './src/Settings.js';
+import { DELETE_ACTION, Settings, STORY_POSITION, WIDTH_TYPE } from './src/Settings.js';
 
 
 /**@type {Settings} */
@@ -86,7 +86,11 @@ const hookChat = (nc)=>{
         const text = um.text;
         // eslint-disable-next-line no-unused-vars
         const { userMes:_, botMes } = await gen(usedHistory, text, bm);
-        bm.update(botMes);
+        if (botMes) {
+            bm.update(botMes);
+        } else {
+            bm.performDelete(DELETE_ACTION.DELETE_SWIPE);
+        }
         await save();
     };
 };
@@ -263,7 +267,11 @@ const send = async(text)=>{
     if (hasUserMes) {
         um.update(userMes);
     }
-    bm.update(botMes);
+    if (botMes) {
+        bm.update(botMes);
+    } else {
+        bm.performDelete(DELETE_ACTION.DELETE_MESSAGE);
+    }
     await save();
 };
 
@@ -437,7 +445,7 @@ const gen = async(history, userText, bm)=>{
     let original;
     let proxy;
     try {
-        const prom = Generate('normal').then(()=>isDone = true);
+        const prom = Generate('normal').then(()=>isDone = true).catch(()=>isDone = true);
         let mes;
         while (!isDone && !mes) {
             mes = document.querySelector(`#chat .mes[mesid="${idx}"] .mes_text`);
@@ -465,6 +473,8 @@ const gen = async(history, userText, bm)=>{
         // save the bot message
         botMes = structuredClone(original);
         dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
+    } else {
+        botMes = null;
     }
 
     // restore original chat array
