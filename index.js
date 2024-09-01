@@ -101,6 +101,7 @@ const chatList = []; {
     addChat();
 }
 let chatIndex = 0;
+/**@type {Chat} */
 let currentChat;
 const dom = {
     /**@type {HTMLElement} */
@@ -154,6 +155,7 @@ export const initMetadata = async()=>{
 };
 const save = async()=>{
     await initMetadata();
+    chatList[chatIndex] = currentChat.file;
     chat_metadata.chatchat.chatList = chatList;
     chat_metadata.chatchat.chatIndex = chatIndex;
     saveMetadataDebounced();
