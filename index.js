@@ -481,7 +481,7 @@ const gen = async(history, userText, bm)=>{
 
     if (original) {
         // save the bot message
-        botMes = structuredClone(original);
+        botMes = structuredClone(Object.assign({}, original));
         dom.messages.children[0].querySelector('.stac--date').textContent = botMes.send_date;
     } else {
         botMes = null;
