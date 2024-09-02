@@ -209,12 +209,22 @@ const updateHead = async()=>{
     const seg = new Intl.Segmenter('en', { granularity:'sentence' });
     dom.head.innerHTML = '';
     const allSections = getSections();
+    const emptySections = allSections.filter(it=>!it.text?.length);
     const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
     const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
     const first = getRegexedString(sections[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
     const last = getRegexedString(sections.slice(-1)[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
     const segFirst = [...seg.segment(first)];
     const segLast = [...seg.segment(last)];
+    if (emptySections.length) {
+        const warn = document.createElement('div'); {
+            warn.classList.add('stac--warn');
+            warn.classList.add('fa-solid', 'fa-fw', 'fa-triangle-exclamation');
+            warn.classList.add('fa-bounce');
+            warn.title = `Empty sections: ${emptySections.length}`;
+            dom.head.append(warn);
+        }
+    }
     const start = document.createElement('div'); {
         start.classList.add('stac--start');
         start.textContent = segFirst.slice(0, 4).map(it=>it.segment).join(' ');

@@ -527,6 +527,9 @@
 .stac--head:hover .stac--end {
   opacity: 1;
 }
+.stac--head .stac--warn {
+  color: orange;
+}
 .stac--head .stac--start {
   flex: 0 0 50%;
   overflow: hidden;
