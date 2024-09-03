@@ -400,7 +400,7 @@ const gen = async(history, userText, bm)=>{
     if (sections.length == 1) {
         story = getRegexedString(sections[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
     } else if (sections.length > 1) {
-        story = sections.map((it,idx)=>`<Section-${idx + 1}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${idx + 1}>`).join('\n');
+        story = sections.map((it,idx)=>`<Section-${it.index}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${it.index}>`).join('\n');
     }
     for (const mes of chat) {
         //TODO use getTokenCountAsync('...') to limit tokens
