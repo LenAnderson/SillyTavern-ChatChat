@@ -1188,9 +1188,14 @@ const init = async()=>{
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-setinput',
         callback: (args, value)=>{
-            dom.input.textContent = value.toString();
+            setInput(value.toString());
             return '';
         },
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({ description: 'text',
+            }),
+        ],
+        helpString: 'Sets the chat input field for ChatChat.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-swipe',
         /**
@@ -1215,11 +1220,30 @@ const init = async()=>{
             }
             return '';
         },
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({ name: 'mes',
+                description: 'index of the message to swipe',
+                typeList: [ARGUMENT_TYPE.NUMBER],
+                defaultValue: 'last message',
+            }),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({ description: 'swipe text - leave blank to keep current text (user) or generate (bot)',
+            }),
+        ],
+        helpString: 'Adds a new swipe to a message.',
     }));
     dom.triggerSpinner.remove();
     isReady = true;
 };
 eventSource.on(event_types.APP_READY, ()=>init());
+
+/**
+ * @param {string} text
+ */
+export const setInput = (text)=>{
+    dom.input.textContent = text;
+};
 
 
 for (const e of Object.values(event_types)) {
