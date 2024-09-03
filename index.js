@@ -396,12 +396,12 @@ const gen = async(history, userText, bm)=>{
     const chatClone = structuredClone(chat);
 
     // build story block
-    const sections = getSections(chat).filter(it=>it.section?.isIncluded ?? true);
+    const sections = getSections(chat).map((section,idx)=>({ section, idx:idx + 1 })).filter(it=>it.section.section?.isIncluded ?? settings.isFirstSectionIncluded);
     let story = '';
     if (sections.length == 1) {
-        story = getRegexedString(sections[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
+        story = getRegexedString(sections[0].section.text, regex_placement.AI_OUTPUT, { isPrompt: true });
     } else if (sections.length > 1) {
-        story = sections.map((it,idx)=>`<Section-${it.index}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${it.index}>`).join('\n');
+        story = sections.map(({ section:it, idx})=>`<Section-${idx}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${idx}>`).join('\n');
     }
     for (const mes of chat) {
         //TODO use getTokenCountAsync('...') to limit tokens
