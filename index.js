@@ -130,6 +130,7 @@ const dom = {
 export const initMetadata = async()=>{
     if (!chat_metadata.chatchat) chat_metadata.chatchat = {};
     if (!chat_metadata.chatchat.settings) chat_metadata.chatchat.settings = {};
+    if (chat_metadata.chatchat.settings.isFirstSectionIncluded === undefined) chat_metadata.chatchat.settings.isFirstSectionIncluded = true;
     if (!chat_metadata.chatchat.chatList) {
         chat_metadata.chatchat.chatList = []; {
             const nc = new Chat();
@@ -939,17 +940,21 @@ const init = async()=>{
                                     }
                                     const actions = document.createElement('div'); {
                                         actions.classList.add('stac--actions');
-                                        if (sec) {
+                                        if (sec || true) {
                                             const hide = document.createElement('div'); {
                                                 hide.classList.add('stac--action');
                                                 hide.classList.add('stac--hide');
                                                 hide.classList.add('fa-solid', 'fa-fw');
-                                                if (sec?.isIncluded ?? true) hide.classList.add('fa-eye');
+                                                if (sec?.isIncluded ?? settings.isFirstSectionIncluded) hide.classList.add('fa-eye');
                                                 else hide.classList.add('fa-eye-slash');
                                                 hide.title = 'Remove section';
                                                 hide.addEventListener('click', async ()=>{
-                                                    sec.isIncluded = !sec.isIncluded;
-                                                    if (sec.isIncluded) {
+                                                    if (sec) {
+                                                        sec.isIncluded = !sec.isIncluded;
+                                                    } else {
+                                                        settings.isFirstSectionIncluded = !settings.isFirstSectionIncluded;
+                                                    }
+                                                    if (sec?.isIncluded ?? settings.isFirstSectionIncluded) {
                                                         hide.classList.add('fa-eye');
                                                         hide.classList.remove('fa-eye-slash');
                                                         first.classList.remove('stac--hidden');

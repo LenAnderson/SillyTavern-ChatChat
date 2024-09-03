@@ -61,6 +61,7 @@ export class Settings {
     /**@type {string} */ character;
     /**@type {string[]} */ inputHistory = [];
     /**@type {Section[]} */ sectionList = [];
+    /**@type {boolean} */ isFirstSectionIncluded = true;
 
     /**@type {BaseSetting[]}*/ settingList = [];
 
@@ -407,6 +408,7 @@ export class Settings {
                 maxInputHistory: this.maxInputHistory,
                 inputHistory: this.inputHistory,
                 sectionList: this.sectionList,
+                isFirstSectionIncluded: this.isFirstSectionIncluded,
             };
             saveMetadataDebounced();
         }
