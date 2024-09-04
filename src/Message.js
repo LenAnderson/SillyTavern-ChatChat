@@ -3,7 +3,7 @@ import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay, escapeRegex, uuidv4 } from '../../../../utils.js';
 import morphdom from '../../../quick-reply/lib/morphdom-esm.js';
-import { isBusy, settings } from '../index.js';
+import { getSections, isBusy, setInput, settings, swipeCombiner } from '../index.js';
 import { stringSplice } from './lib/stringSplice.js';
 import { waitForFrame } from './lib/wait.js';
 import { DELETE_ACTION } from './Settings.js';
@@ -44,7 +44,7 @@ export const MESSAGE_TYPE = {
  * @prop {string} [mes] message text
  * @prop {number} [swipe_id] current swipe index (0-based)
  * @prop {string[]} [swipes] list of message texts from swipes
- * @prop {ChatMessageSwipeInfo[]} [swipe] specific info that will be put into the message object for the active swipe
+ * @prop {ChatMessageSwipeInfo[]} [swipe_info] specific info that will be put into the message object for the active swipe
  * @prop {string} [gen_started] time when the generation started - new Date().toString()
  * @prop {string} [gen_finished] time when the generation finishe - new Date().toString()
  * @prop {string} [force_avatar]
@@ -287,7 +287,7 @@ export class Message {
         this.onChange();
     }
 
-    async nextSwipe() {
+    async nextSwipe(noGen = false) {
         if (this.swipeIndex + 1 < this.swipeList.length) {
             // more existing swipes to the right
             const oldSwipe = this.swipe;
@@ -302,6 +302,14 @@ export class Message {
                 const oldSwipe = this.swipe;
                 this.addTextSwipe(this.swipe.text);
                 this.swipe.isUser = true;
+                this.updateRender(oldSwipe.data);
+                this.onSwipe(oldSwipe);
+                this.toggleEditor();
+            } else if (noGen) {
+                // add empty swipe and open editor
+                const oldSwipe = this.swipe;
+                this.addTextSwipe(this.swipe.text);
+                this.swipe.isUser = false;
                 this.updateRender(oldSwipe.data);
                 this.onSwipe(oldSwipe);
                 this.toggleEditor();
@@ -418,6 +426,14 @@ export class Message {
 
     messageFormatting() {
         let messageText = this.text;
+        if (this.isUser) {
+            // replace ChatChat macros
+            const sections = getSections();
+            messageText = messageText.replace(/{{para::(\d+)::(\d+)}}/g, (_, section, paragraph)=>{
+                const s = sections[parseInt(section) - 1];
+                return s?.text.split(/\n+/).at(parseInt(paragraph) - 1) ?? '';
+            });
+        }
 
         // regex-step through the text to do multiple things:
         // 1) attempt to close unclosed tags
@@ -599,16 +615,82 @@ export class Message {
                 root.classList.add('mes');
                 const details = document.createElement('div'); {
                     details.classList.add('stac--details');
-                    if (!this.isUser) {
-                        const ava = document.createElement('div'); {
-                            ava.classList.add('stac--avatar');
-                            const img = document.createElement('img'); {
-                                this.dom.avatar = img;
-                                img.classList.add('stac--avatarImg');
-                                img.src = `/thumbnail?type=avatar&file=${this.character ?? Message.defaultCharacter}`;
-                                ava.append(img);
+                    details.title = 'Click to scroll to top of message';
+                    details.addEventListener('click', (evt)=>{
+                        if (/**@type {HTMLElement}*/(evt.target).hasAttribute?.('data-stac--action')) return;
+                        root.scrollIntoView({ behavior:'smooth', block:'start' });
+                    });
+                    { // avatar / menu
+                        let actionsMenu;
+                        const hideMenu = async()=>{
+                            actionsMenu.classList.remove('stac--active');
+                            await delay(210);
+                            actionsMenu.remove();
+                            actionsMenu = null;
+                        };
+                        const showMenu = async()=>{
+                            if (actionsMenu) {
+                                await hideMenu();
+                                return;
                             }
-                            details.append(ava);
+                            const menu = document.createElement('div'); {
+                                actionsMenu = menu;
+                                menu.classList.add('stac--msgMenu');
+                                menu.classList.add('stac--actionsMenu');
+                                if (actions.getBoundingClientRect().top > window.innerHeight / 2) {
+                                    menu.classList.add('stac--up');
+                                } else {
+                                    menu.classList.add('stac--down');
+                                }
+                                if (swipeCombiner) {
+                                    const combiner = document.createElement('div'); {
+                                        combiner.classList.add('stac--item');
+                                        combiner.setAttribute('data-stac--action', 'swipeCombiner');
+                                        combiner.textContent = 'Combine Swipes';
+                                        combiner.addEventListener('click', async(evt)=>{
+                                            evt.stopPropagation();
+                                            if (isBusy) return;
+                                            hideMenu();
+                                            const msg = await swipeCombiner(this.swipeList);
+                                            if (msg) {
+                                                setInput(msg);
+                                            }
+                                        });
+                                        menu.append(combiner);
+                                    }
+                                }
+                                details.append(menu);
+                                await waitForFrame();
+                                menu.classList.add('stac--active');
+                            }
+                        };
+                        if (!this.isUser) {
+                            const ava = document.createElement('div'); {
+                                ava.classList.add('stac--avatar');
+                                ava.addEventListener('click', async(evt)=>{
+                                    evt.stopPropagation();
+                                    if (isBusy) return;
+                                    showMenu();
+                                });
+                                const img = document.createElement('img'); {
+                                    this.dom.avatar = img;
+                                    img.classList.add('stac--avatarImg');
+                                    img.src = `/thumbnail?type=avatar&file=${this.character ?? Message.defaultCharacter}`;
+                                    ava.append(img);
+                                }
+                                details.append(ava);
+                            }
+                        } else {
+                            const menuTrigger = document.createElement('div'); {
+                                menuTrigger.classList.add('stac--menuTrigger');
+                                menuTrigger.classList.add('fa-solid', 'fa-fw', 'fa-ellipsis');
+                                menuTrigger.addEventListener('click', async(evt)=>{
+                                    evt.stopPropagation();
+                                    if (isBusy) return;
+                                    showMenu();
+                                });
+                                details.append(menuTrigger);
+                            }
                         }
                     }
                     const dt = document.createElement('div'); {
@@ -670,6 +752,7 @@ export class Message {
                                 }
                                 const menu = document.createElement('div'); {
                                     delMenu = menu;
+                                    menu.classList.add('stac--msgMenu');
                                     menu.classList.add('stac--delMenu');
                                     if (actions.getBoundingClientRect().top > window.innerHeight / 2) {
                                         menu.classList.add('stac--up');
@@ -701,6 +784,7 @@ export class Message {
                                 }
                             };
                             del.addEventListener('click', async(evt)=>{
+                                evt.stopPropagation();
                                 if (isBusy) return;
                                 switch (settings.deleteAction) {
                                     case DELETE_ACTION.SHOW_MENU: {
@@ -724,7 +808,8 @@ export class Message {
                             copy.classList.add('stac--action');
                             copy.classList.add('fa-solid', 'fa-copy');
                             copy.title = 'Copy message text';
-                            copy.addEventListener('click', async()=>{
+                            copy.addEventListener('click', async(evt)=>{
+                                evt.stopPropagation();
                                 let ok = false;
                                 try {
                                     navigator.clipboard.writeText(this.text);
@@ -758,7 +843,8 @@ export class Message {
                             swipeLeft.classList.add('stac--swipeLeft');
                             swipeLeft.classList.add('fa-solid', 'fa-chevron-left');
                             swipeLeft.title = 'Show previous swipe';
-                            swipeLeft.addEventListener('click', ()=>{
+                            swipeLeft.addEventListener('click', (evt)=>{
+                                evt.stopPropagation();
                                 if (isBusy) return;
                                 if (this.swipeIndex == 0) return;
                                 const oldSwipe = this.swipe;
@@ -775,7 +861,8 @@ export class Message {
                             swipes.classList.add('stac--swipesCount');
                             swipes.textContent = `${this.swipeIndex + 1} / ${(this.swipeList.length)}`;
                             swipes.title = 'Manage swipes / branches';
-                            swipes.addEventListener('click', async()=>{
+                            swipes.addEventListener('click', async(evt)=>{
+                                evt.stopPropagation();
                                 if (isBusy) return;
                                 const dom = document.createElement('div'); {
                                     dom.classList.add('stac--swipesDlg');
@@ -874,10 +961,11 @@ export class Message {
                             swipeRight.classList.add('stac--action');
                             swipeRight.classList.add('stac--swipeRight');
                             swipeRight.classList.add('fa-solid', 'fa-chevron-right');
-                            swipeRight.title = 'Show or generate / write next swipe';
-                            swipeRight.addEventListener('click', ()=>{
+                            swipeRight.title = 'Show or generate / write next swipe\n---\nCtrl+Click to swipe without generating';
+                            swipeRight.addEventListener('click', (evt)=>{
+                                evt.stopPropagation();
                                 if (isBusy) return;
-                                this.nextSwipe();
+                                this.nextSwipe(evt.ctrlKey);
                             });
                             actions.append(swipeRight);
                         }
@@ -885,7 +973,10 @@ export class Message {
                             edit.classList.add('stac--action');
                             edit.classList.add('fa-solid', 'fa-pencil');
                             edit.title = 'Edit message';
-                            edit.addEventListener('click', ()=>this.toggleEditor());
+                            edit.addEventListener('click', (evt)=>{
+                                evt.stopPropagation();
+                                this.toggleEditor();
+                            });
                             actions.append(edit);
                         }
                         details.append(actions);

@@ -154,7 +154,7 @@
   overflow-x: clip;
   overflow-y: auto;
 }
-.stac--panel .stac--messages:has(.stac--delMenu) .stac--message:not(:has(.stac--delMenu)) {
+.stac--panel .stac--messages:has(.stac--msgMenu) .stac--message:not(:has(.stac--msgMenu)) {
   z-index: -1;
 }
 .stac--panel .stac--messages > .stac--message {
@@ -268,6 +268,19 @@
   cursor: default;
   transition: 200ms;
 }
+.stac--panel .stac--messages .stac--menuTrigger {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  opacity: 0.5;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  width: 1.5em;
+}
 .stac--panel .stac--messages .stac--avatar {
   position: absolute;
   top: -1.4em;
@@ -276,6 +289,7 @@
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 50%;
+  cursor: pointer;
 }
 .stac--panel .stac--messages .stac--avatarImg {
   height: 100%;
@@ -287,7 +301,7 @@
   background-color: var(--userColorBgHeader);
   color: var(--userColorTextHeader);
   margin-left: -10px;
-  padding-left: 10px;
+  padding-left: calc(10px + 0.8em);
 }
 .stac--panel .stac--messages .stac--user .stac--details .stac--actions {
   width: calc(12.5em + 3em / 0.75);
@@ -356,31 +370,54 @@
   background-color: #bd362f;
   opacity: 1;
 }
-.stac--panel .stac--messages .stac--delMenu {
+.stac--panel .stac--messages .stac--msgMenu {
   filter: drop-shadow(1px 1px 2px var(--black50a));
   z-index: 30000;
   border-radius: 10px;
+  transition: 200ms;
+  scale: 0;
+  position: absolute;
+}
+.stac--panel .stac--messages .stac--msgMenu.stac--up {
+  bottom: 100%;
+  transform-origin: center bottom;
+}
+.stac--panel .stac--messages .stac--msgMenu.stac--down {
+  top: 100%;
+  transform-origin: center top;
+}
+.stac--panel .stac--messages .stac--msgMenu.stac--active {
+  scale: 1;
+}
+.stac--panel .stac--messages .stac--actionsMenu {
+  display: flex;
+  flex-direction: column;
+  max-height: 40vh;
+  overflow: auto;
+  left: 0;
+  max-width: 90%;
+  background-color: var(--secondaryBg, var(--SmartThemeBlurTintColor));
+}
+.stac--panel .stac--messages .stac--actionsMenu.stac--up {
+  transform-origin: left bottom;
+}
+.stac--panel .stac--messages .stac--actionsMenu.stac--down {
+  transform-origin: left top;
+}
+.stac--panel .stac--messages .stac--actionsMenu .stac--item {
+  cursor: pointer;
+  border-bottom: 1px solid var(--SmartThemeBorderColor);
+  transition: 200ms;
+  padding: 0.5em;
+  font-size: smaller;
+}
+.stac--panel .stac--messages .stac--delMenu {
   padding: 0.5em;
   display: flex;
   flex-direction: row;
   gap: 0.5em;
   backdrop-filter: blur(10px);
-  position: absolute;
   right: 0;
-  transition: 200ms;
-  transform-origin: center top;
-  scale: 0;
-}
-.stac--panel .stac--messages .stac--delMenu.stac--up {
-  bottom: 100%;
-  transform-origin: center bottom;
-}
-.stac--panel .stac--messages .stac--delMenu.stac--down {
-  top: 100%;
-  transform-origin: center top;
-}
-.stac--panel .stac--messages .stac--delMenu.stac--active {
-  scale: 1;
 }
 .stac--panel .stac--messages .stac--delMenu .stac--item {
   border: 1px solid var(--SmartThemeBorderColor);
@@ -825,4 +862,22 @@ body .stac--storyDlg .stac--sections .stac--anchor {
 body .stac--storyDlg .stac--sections .stac--dots {
   opacity: 0.5;
   font-size: 0.7em;
+}
+@keyframes stac--flash {
+  0% {
+    filter: invert(0);
+  }
+  50% {
+    filter: invert(1);
+  }
+  100% {
+    filter: invert(0);
+  }
+}
+.stac--flash {
+  animation-name: flash;
+  animation-duration: 1000ms;
+  animation-timing-function: linear;
+  animation-delay: 0s;
+  animation-iteration-count: 3;
 }

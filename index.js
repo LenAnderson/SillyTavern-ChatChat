@@ -1,8 +1,10 @@
-import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, saveChatConditional, saveMetadata, sendMessageAsUser, setExtensionPrompt, system_message_types, this_chid } from '../../../../script.js';
+import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, messageFormatting, saveChatConditional, saveMetadata, sendMessageAsUser, setExtensionPrompt, showSwipeButtons, system_message_types, this_chid } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
 import { Popup, POPUP_TYPE } from '../../../popup.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
 import { SlashCommand } from '../../../slash-commands/SlashCommand.js';
+import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '../../../slash-commands/SlashCommandArgument.js';
+import { SlashCommandEnumValue } from '../../../slash-commands/SlashCommandEnumValue.js';
 import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
 import { getTokenCountAsync } from '../../../tokenizers.js';
 import { delay } from '../../../utils.js';
@@ -19,6 +21,8 @@ import { DELETE_ACTION, Settings, STORY_POSITION, WIDTH_TYPE } from './src/Setti
 export let settings;
 
 export let isBusy = false;
+/**@type {(swipes:{text:string, isFavorite?:boolean}[])=>Promise<string>} */
+export let swipeCombiner;
 
 
 function isRole(mes, roles) {
@@ -106,7 +110,7 @@ const chatList = []; {
 }
 let chatIndex = 0;
 /**@type {Chat} */
-let currentChat;
+export let currentChat;
 const dom = {
     /**@type {HTMLElement} */
     trigger: undefined,
@@ -291,7 +295,7 @@ const send = async(text)=>{
  * @param {*} history
  * @returns {{anchor:string, index:number, text:string, section:Section}[]}
  */
-const getSections = (history)=>{
+export const getSections = (history)=>{
     history ??= chat;
     const story = history.filter(mes=>!mes.is_system && isRole(mes, ['assistant']));
     const storyText = getRegexedString(story.map(it=>it.mes).join('\n'), regex_placement.AI_OUTPUT, { isPrompt: true });
@@ -353,6 +357,12 @@ const getSections = (history)=>{
     // }
     return sectionIndex;
 };
+export const getParagraph = (section, paragraphStart, paragraphEnd = null)=>{
+    return (getSections()[section - 1]?.text
+        .split(/\n+/)
+        .slice(paragraphStart - 1, (paragraphEnd ?? paragraphStart + 1) - 1) ?? []
+    ).join('\n');
+};
 
 /**
  *
@@ -396,12 +406,13 @@ const gen = async(history, userText, bm)=>{
     const chatClone = structuredClone(chat);
 
     // build story block
-    const sections = getSections(chat).map((section,idx)=>({ section, idx:idx + 1 })).filter(it=>it.section.section?.isIncluded ?? settings.isFirstSectionIncluded);
+    const allSections = getSections(chat);
+    const sections = allSections.map((section,idx)=>({ section, idx:idx + 1 })).filter(it=>it.section.section?.isIncluded ?? settings.isFirstSectionIncluded);
     let story = '';
     if (sections.length == 1) {
         story = getRegexedString(sections[0].section.text, regex_placement.AI_OUTPUT, { isPrompt: true });
     } else if (sections.length > 1) {
-        story = sections.map(({ section:it, idx})=>`<Section-${idx}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${idx}>`).join('\n');
+        story = sections.map(({ section:it, idx })=>`<Section-${idx}>\n${getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })}\n</Section-${idx}>`).join('\n');
     }
     for (const mes of chat) {
         //TODO use getTokenCountAsync('...') to limit tokens
@@ -433,9 +444,13 @@ const gen = async(history, userText, bm)=>{
     const historyInjects = [];
     for (const h of history) {
         const id = `chatchat-history-${historyInjects.length}`;
+        const text = h.text.replace(/{{para::(\d+)::(\d+)}}/g, (_, section, paragraph)=>{
+            const s = allSections[parseInt(section) - 1];
+            return s?.text.split(/\n+/).at(parseInt(paragraph) - 1) ?? '';
+        });
         const args = [
             id,
-            getRegexedString(h.text, regex_placement.AI_OUTPUT, { isPrompt: true }),
+            getRegexedString(text, regex_placement.AI_OUTPUT, { isPrompt: true }),
             extension_prompt_types.IN_CHAT,
             history.length - historyInjects.length + 1,
             true,
@@ -446,7 +461,11 @@ const gen = async(history, userText, bm)=>{
     }
 
     // send the latest user message as regular chat message
-    await sendMessageAsUser(userText, null);
+    const userTextFinal = userText.replace(/{{para::(\d+)::(\d+)}}/g, (_, section, paragraph)=>{
+        const s = allSections[parseInt(section) - 1];
+        return s?.text.split(/\n+/).at(parseInt(paragraph) - 1) ?? '';
+    });
+    await sendMessageAsUser(userTextFinal, null);
     const userMes = structuredClone(chat.slice(-1)[0]);
 
     // wait for and then observe bot message to stream the response
@@ -824,6 +843,8 @@ const showHistoryMenu = async()=>{
 const init = async()=>{
     let isReady = false;
     loadSettings();
+
+    // UI
     const trigger = document.createElement('div'); {
         dom.trigger = trigger;
         trigger.classList.add('stac--trigger');
@@ -1168,24 +1189,34 @@ const init = async()=>{
         }
         document.body.append(panel);
     }
-    panel.style.setProperty('--fontSize', settings.fontSize.toString());
-    panel.classList[settings.widthType == WIDTH_TYPE.SCREEN ? 'add' : 'remove']('stac--unlocked');
-    panel.style.setProperty('--width', settings.width.toString());
-    panel.style.setProperty('--inputColorBg', settings.inputColorBg.toString());
-    panel.style.setProperty('--inputColorText', settings.inputColorText.toString());
-    panel.style.setProperty('--userColorBg', settings.userColorBg.toString());
-    panel.style.setProperty('--userColorText', settings.userColorText.toString());
-    panel.style.setProperty('--userColorBgHeader', settings.userColorBgHeader.toString());
-    panel.style.setProperty('--userColorTextHeader', settings.userColorTextHeader.toString());
-    panel.style.setProperty('--botColorBg', settings.botColorBg.toString());
-    panel.style.setProperty('--botColorText', settings.botColorText.toString());
-    panel.style.setProperty('--botColorBgHeader', settings.botColorBgHeader.toString());
-    panel.style.setProperty('--botColorTextHeader', settings.botColorTextHeader.toString());
+    { // css stuff
+        panel.classList[settings.widthType == WIDTH_TYPE.SCREEN ? 'add' : 'remove']('stac--unlocked');
+        panel.style.setProperty('--fontSize', settings.fontSize.toString());
+        panel.style.setProperty('--width', settings.width.toString());
+        panel.style.setProperty('--inputColorBg', settings.inputColorBg.toString());
+        panel.style.setProperty('--inputColorText', settings.inputColorText.toString());
+        panel.style.setProperty('--userColorBg', settings.userColorBg.toString());
+        panel.style.setProperty('--userColorText', settings.userColorText.toString());
+        panel.style.setProperty('--userColorBgHeader', settings.userColorBgHeader.toString());
+        panel.style.setProperty('--userColorTextHeader', settings.userColorTextHeader.toString());
+        panel.style.setProperty('--botColorBg', settings.botColorBg.toString());
+        panel.style.setProperty('--botColorText', settings.botColorText.toString());
+        panel.style.setProperty('--botColorBgHeader', settings.botColorBgHeader.toString());
+        panel.style.setProperty('--botColorTextHeader', settings.botColorTextHeader.toString());
+    }
     await onChatChanged();
     eventSource.on(event_types.CHAT_CHANGED, ()=>(onChatChanged(), null));
 
+    // check for swipe combiner
+    try {
+        swipeCombiner = (await import('../SillyTavern-SwipeCombiner/index.js')).showSwipeCombiner;
+    } catch {
+        console.log('[STAC]', 'swipe combiner not found');
+    }
+
     updateHeadLoop();
 
+    // slash commands
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-setinput',
         callback: (args, value)=>{
             setInput(value.toString());
@@ -1205,8 +1236,10 @@ const init = async()=>{
          * }} args
          * @param {string} value
          */
-        callback: (args, value)=>{
-            const idx = Number(args.mes ?? (currentChat.messageCount - 1));
+        callback: async(args, value)=>{
+            let idx = Number(args.mes);
+            if (args.mes == undefined) idx = currentChat.messageCount - 1;
+            else if (idx < 0) idx = currentChat.messageCount + idx;
             let mes = currentChat.rootMessage;
             for (let i = 0; i < idx; i++) {
                 mes = mes.next;
@@ -1215,8 +1248,8 @@ const init = async()=>{
             if (value?.length) {
                 mes.addTextSwipe(value);
             } else {
-                mes.goToSwipe(mes.swipeList.length - 1);
-                mes.nextSwipe();
+                await mes.goToSwipe(mes.swipeList.length - 1);
+                await mes.nextSwipe();
             }
             return '';
         },
@@ -1233,6 +1266,111 @@ const init = async()=>{
         ],
         helpString: 'Adds a new swipe to a message.',
     }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-message',
+        callback: (args, value)=>{
+            let idx = Number(value);
+            if (value == undefined) idx = currentChat.messageCount - 1;
+            else if (idx < 0) idx = currentChat.messageCount + idx;
+            let mes = currentChat.rootMessage;
+            for (let i = 0; i < idx; i++) {
+                mes = mes.next;
+                if (!mes) throw new Error(`/chatchat-message no message at index mes=${idx}`);
+            }
+            return mes.text;
+        },
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({ description: 'message index (negative starts at last message)',
+                typeList: [ARGUMENT_TYPE.NUMBER],
+                defaultValue: 'last message',
+            }),
+        ],
+        returns: 'Message text.',
+        helpString: 'Retrieves text from a message.',
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-replacepara',
+        /**
+         *
+         * @param {import('../../../slash-commands/SlashCommand.js').NamedArguments & {
+         * }} args
+         * @param {[section:string, paragraph:string, newText:string]} value
+         */
+        callback: async(args, value)=>{
+            const s = parseInt(value[0]);
+            const p = value[1].split('-').map(it=>parseInt(it));
+            const t = value[2];
+            const old = getParagraph(s, ...p);
+            if (old?.length) {
+                const mesId = chat.findIndex(it=>!it.is_system && isRole(it, ['assistant']) && it.mes.includes(old));
+                if (mesId > -1) {
+                    /**@type {import('./src/Message.js').ChatMessage} */
+                    const mes = chat[mesId];
+                    if (!mes.swipes) {
+                        mes.swipes = [mes.mes];
+                    }
+                    if (!mes.swipe_info) {
+                        mes.swipe_info = [{
+                            extra: structuredClone(mes.extra),
+                            gen_finished: mes.gen_finished,
+                            gen_started: mes.gen_started,
+                            send_date: mes.send_date,
+                        }];
+                    }
+                    if (mes.swipe_id === undefined) {
+                        mes.swipe_id = 0;
+                    }
+                    const mesText = mes.mes.replace(old, `§§§STAC§§§${t}§§§/STAC§§§`);
+                    mes.mes = mes.mes.replace(old, t);
+                    mes.swipes.push(mes.mes);
+                    mes.swipe_info.push(structuredClone(mes.swipe_info[mes.swipe_id]));
+                    mes.swipe_id++;
+                    const el = document.querySelector(`#chat .mes[mesid="${mesId}"] .mes_text`);
+                    if (el) {
+                        el.innerHTML = messageFormatting(mesText, mes.name, mes.is_system, mes.is_user, mesId)
+                            .replace(/§§§STAC§§§(.+)§§§\/STAC§§§/s, '<span class="stac--flash">$1</span>')
+                        ;
+                        const pel = el.querySelector('.stac--flash');
+                        pel.scrollIntoView({ behavior:'instant', block:'center', inline:'center' });
+                        delay(3000).then(()=>pel.replaceWith(...pel.childNodes));
+                        eventSource.emit(event_types.MESSAGE_SWIPED, mesId);
+                        saveChatConditional();
+                    }
+                    showSwipeButtons();
+                }
+            }
+            return '';
+        },
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({ description: 'section (1-based)',
+                typeList: [ARGUMENT_TYPE.NUMBER],
+                enumProvider: ()=>[...('.'.repeat(settings.sectionList.length))].map((_,idx)=>new SlashCommandEnumValue((idx + 1).toString(), settings.sectionList[idx].separator)),
+                isRequired: true,
+            }),
+            SlashCommandArgument.fromProps({ description: 'paragraph (1-based)',
+                typeList: [ARGUMENT_TYPE.NUMBER, ARGUMENT_TYPE.RANGE],
+                isRequired: true,
+            }),
+            SlashCommandArgument.fromProps({ description: 'new text',
+                isRequired: true,
+            }),
+        ],
+        splitUnnamedArgument: true,
+        splitUnnamedArgumentCount: 2,
+        helpString: `
+            <div>
+                Replace a pragraph in a story section. Creates a new swipe in the chat message that
+                is the source of that paragraph.
+            </div>
+        `,
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-trigger',
+        callback: async(args, value)=>{
+            await send('');
+            return '';
+        },
+        helpString: 'trigger ChatChat reply',
+    }));
+
+    // unblock
     dom.triggerSpinner.remove();
     isReady = true;
 };
