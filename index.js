@@ -1305,6 +1305,32 @@ const init = async()=>{
         returns: 'Message text.',
         helpString: 'Retrieves text from a message.',
     }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-edit',
+        callback: (args, value)=>{
+            let idx = Number(value[0]);
+            if (value[0] == undefined) idx = currentChat.messageCount - 1;
+            else if (idx < 0) idx = currentChat.messageCount + idx;
+            let mes = currentChat.rootMessage;
+            for (let i = 0; i < idx; i++) {
+                mes = mes.next;
+                if (!mes) throw new Error(`/chatchat-message no message at index mes=${idx}`);
+            }
+            mes.updateText(value[1].toString());
+            return '';
+        },
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({ description: 'message index (negative starts at the back)',
+                typeList: [ARGUMENT_TYPE.NUMBER],
+                isRequired: true,
+            }),
+            SlashCommandArgument.fromProps({ description: 'new message text',
+                isRequired: true,
+            }),
+        ],
+        splitUnnamedArgument: true,
+        splitUnnamedArgumentCount: 1,
+        helpString: 'Edit the text of a ChatChat message.',
+    }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-replacepara',
         /**
          *
