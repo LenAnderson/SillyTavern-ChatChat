@@ -7,7 +7,7 @@ import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '
 import { SlashCommandEnumValue } from '../../../slash-commands/SlashCommandEnumValue.js';
 import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
 import { getTokenCountAsync } from '../../../tokenizers.js';
-import { delay } from '../../../utils.js';
+import { delay, isTrueBoolean } from '../../../utils.js';
 import { getRegexedString, regex_placement } from '../../regex/engine.js';
 import { groupId } from '../SillyTavern-TriggerCards/index.js';
 import { Chat } from './src/Chat.js';
@@ -1217,6 +1217,9 @@ const init = async()=>{
     updateHeadLoop();
 
     // slash commands
+    function isTrueFlag(value) {
+        return isTrueBoolean((value ?? 'false') || 'true');
+    }
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'chatchat-setinput',
         callback: (args, value)=>{
             setInput(value.toString());
@@ -1276,8 +1279,23 @@ const init = async()=>{
                 mes = mes.next;
                 if (!mes) throw new Error(`/chatchat-message no message at index mes=${idx}`);
             }
-            return mes.text;
+            let text = mes.text;
+            if (isTrueFlag(args.sub)) {
+                let sections;
+                text = text.replace(/{{para::(\d+)::(\d+)}}/g, (_, section, paragraph)=>{
+                    if (!sections) sections = getSections();
+                    const s = sections[parseInt(section) - 1];
+                    return s?.text.split(/\n+/).at(parseInt(paragraph) - 1) ?? '';
+                });
+            }
+            return text;
         },
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({ name: 'sub',
+                description: 'substitute macros (e.g., {{para::...}})',
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
+            }),
+        ],
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({ description: 'message index (negative starts at last message)',
                 typeList: [ARGUMENT_TYPE.NUMBER],
