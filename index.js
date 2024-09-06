@@ -403,7 +403,7 @@ const gen = async(history, userText, bm)=>{
     document.body.append(style);
 
     // clone current chat array for restoring later
-    const chatClone = structuredClone(chat);
+    const chatClone = structuredClone(chat.map(it=>Object.assign({}, it)));
 
     // build story block
     const allSections = getSections(chat);
@@ -421,14 +421,16 @@ const gen = async(history, userText, bm)=>{
     }
 
     // add story block as injection
-    setExtensionPrompt(
-        'chatchat-content',
-        `<Story>${story}</Story>`,
-        extension_prompt_types.IN_CHAT,
-        settings.storyPosition == STORY_POSITION.BEFORE_CHAT ? history.length + 2 : settings.storyDepth,
-        true,
-        extension_prompt_roles.SYSTEM,
-    );
+    if (story.length) {
+        setExtensionPrompt(
+            'chatchat-content',
+            `<Story>${story}</Story>`,
+            extension_prompt_types.IN_CHAT,
+            settings.storyPosition == STORY_POSITION.BEFORE_CHAT ? history.length + 2 : settings.storyDepth,
+            true,
+            extension_prompt_roles.SYSTEM,
+        );
+    }
 
     // add user injections (settings are not implemented)
     settings.injectList.forEach(({ text, type, depth, scan, role },idx)=>setExtensionPrompt(
