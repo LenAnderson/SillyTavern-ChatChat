@@ -750,7 +750,15 @@ const showMenu = async()=>{
                                     if (evt.shiftKey || evt.altKey || evt.ctrlKey || evt.key != 'Enter') return;
                                     titleEl.removeEventListener('keydown', listener);
                                     titleEl.removeAttribute('contenteditable');
-                                    c.title = titleEl.textContent;
+                                    let chat;
+                                    if (c.id == currentChat.id) {
+                                        chat = currentChat;
+                                    } else {
+                                        chat = await Chat.load(c);
+                                    }
+                                    chat.title = titleEl.textContent;
+                                    Object.assign(c, chat.file);
+                                    await chat.save();
                                     await save();
                                 };
                                 titleEl.addEventListener('keydown', listener);
