@@ -304,12 +304,12 @@
   padding-left: calc(10px + 0.8em);
 }
 .stac--panel .stac--messages .stac--user .stac--details .stac--actions {
-  width: calc(12.5em + 3em / 0.75);
+  width: calc(15em + 3em / 0.75);
 }
 .stac--panel .stac--messages .stac--details {
   display: flex;
   align-items: center;
-  gap: 2em;
+  gap: 0.75em;
   background-color: var(--botColorBgHeader);
   border-bottom: 1px solid black;
   border-radius: 10px 10px 0 0;
@@ -336,7 +336,7 @@
   justify-content: end;
 }
 .stac--panel .stac--messages .stac--details .stac--actions {
-  width: 12.5em;
+  width: 15em;
   justify-content: end;
 }
 .stac--panel .stac--messages .stac--details .stac--info {
@@ -369,6 +369,9 @@
 .stac--panel .stac--messages .stac--details .stac--action.stac--failure {
   background-color: #bd362f;
   opacity: 1;
+}
+.stac--panel .stac--messages .stac--details .stac--action.stac--isFavorite {
+  color: gold;
 }
 .stac--panel .stac--messages .stac--msgMenu {
   filter: drop-shadow(1px 1px 2px var(--black50a));

@@ -90,6 +90,7 @@ export class Swipe {
     /**@type {ChatMessage} */ data = {};
     /**@type {Message} */ next;
     /**@type {string} */ character;
+    /**@type {boolean} */ isFavorite = false;
 
     /**@type {string} message text */
     get text() { return this.data.mes; }
@@ -120,6 +121,7 @@ export class Swipe {
             data: this.data,
             next: this.next,
             character: this.character,
+            isFavorite: this.isFavorite,
         };
     }
 }
@@ -217,6 +219,8 @@ export class Message {
         avatar: undefined,
         /**@type {HTMLElement} */
         date: undefined,
+        /**@type {HTMLElement} */
+        fav: undefined,
         /**@type {HTMLElement} */
         swipes: undefined,
         /**@type {HTMLElement} */
@@ -838,6 +842,21 @@ export class Message {
                             });
                             actions.append(copy);
                         }
+                        const fav = document.createElement('div'); {
+                            this.dom.fav = fav;
+                            fav.classList.add('stac--action');
+                            fav.classList.add('stac--fav');
+                            fav.classList.add('fa-solid', 'fa-star');
+                            fav.classList[this.swipe.isFavorite ? 'add' : 'remove']('stac--isFavorite');
+                            fav.title = 'Toggle favorite';
+                            fav.addEventListener('click', async(evt)=>{
+                                evt.stopPropagation();
+                                this.swipe.isFavorite = !this.swipe.isFavorite;
+                                fav.classList[this.swipe.isFavorite ? 'add' : 'remove']('stac--isFavorite');
+                                this.onChange();
+                            });
+                            actions.append(fav);
+                        }
                         const swipeLeft = document.createElement('div'); {
                             swipeLeft.classList.add('stac--action');
                             swipeLeft.classList.add('stac--swipeLeft');
@@ -1018,5 +1037,6 @@ export class Message {
         }
         this.dom.swipes.textContent = `${this.swipeIndex + 1} / ${(this.swipeList.length)}`;
         if (this.dom.avatar) this.dom.avatar.src = `/thumbnail?type=avatar&file=${this.character ?? Message.defaultCharacter}`;
+        this.dom.fav.classList[this.swipe.isFavorite ? 'add' : 'remove']('stac--isFavorite');
     }
 }
