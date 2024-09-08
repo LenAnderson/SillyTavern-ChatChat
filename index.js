@@ -620,7 +620,7 @@ const showMenu = async()=>{
                 dom.panel.classList.add('stac--isLoading');
                 hideMenu();
                 const nc = addChat();
-                chatIndex++;
+                chatIndex = chatList.length - 1;
                 currentChat = nc;
                 await save();
                 reloadChat();
