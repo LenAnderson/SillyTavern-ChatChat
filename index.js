@@ -201,24 +201,23 @@ const updateHeadLoop = async()=>{
         if (!isBusy) {
             const allSections = getSections();
             const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
-            const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
+            const storyText = sections.map(it=>it.text).join(' ');
             if (oldText != storyText) {
-                updateHead();
+                updateHead(allSections);
                 oldText = storyText;
             }
         }
         await delay(500);
     }
 };
-const updateHead = async()=>{
+const updateHead = async(allSections)=>{
     const seg = new Intl.Segmenter('en', { granularity:'sentence' });
     dom.head.innerHTML = '';
-    const allSections = getSections();
     const emptySections = allSections.filter(it=>!it.text?.length);
     const sections = allSections.filter(it=>it.section?.isIncluded ?? true);
-    const storyText = sections.map(it=>getRegexedString(it.text, regex_placement.AI_OUTPUT, { isPrompt: true })).join(' ');
-    const first = getRegexedString(sections[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
-    const last = getRegexedString(sections.slice(-1)[0].text, regex_placement.AI_OUTPUT, { isPrompt: true });
+    const storyText = sections.map(it=>it.text).join(' ');
+    const first = sections[0].text;
+    const last = sections.slice(-1)[0].text;
     const segFirst = [...seg.segment(first)];
     const segLast = [...seg.segment(last)];
     if (emptySections.length) {
@@ -250,7 +249,7 @@ const updateHead = async()=>{
     ].filter(it=>it).join('\n');
 };
 const reloadChat = async()=>{
-    updateHead();
+    updateHead(getSections());
     currentChat.render(dom.messages);
     dom.panel.classList.remove('stac--isLoading');
 };
