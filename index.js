@@ -1,5 +1,6 @@
 import { chat, chat_metadata, event_types, eventSource, extension_prompt_roles, extension_prompt_types, Generate, messageFormatting, saveChatConditional, saveMetadata, sendMessageAsUser, setExtensionPrompt, showSwipeButtons, system_message_types, this_chid } from '../../../../script.js';
 import { saveMetadataDebounced } from '../../../extensions.js';
+import { selected_group } from '../../../group-chats.js';
 import { Popup, POPUP_TYPE } from '../../../popup.js';
 import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';
 import { SlashCommand } from '../../../slash-commands/SlashCommand.js';
@@ -9,7 +10,6 @@ import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.j
 import { getTokenCountAsync } from '../../../tokenizers.js';
 import { delay, isTrueBoolean } from '../../../utils.js';
 import { getRegexedString, regex_placement } from '../../regex/engine.js';
-import { groupId } from '../SillyTavern-TriggerCards/index.js';
 import { Chat } from './src/Chat.js';
 import { waitForFrame } from './src/lib/wait.js';
 import { Message } from './src/Message.js';
@@ -187,7 +187,7 @@ const onChatChanged = async()=>{
     currentChat = await Chat.load(chatList[chatIndex]);
     hookChat(currentChat);
     reloadChat();
-    if ((this_chid === null || this_chid === undefined) && (groupId === null || groupId === undefined)) {
+    if ((this_chid === null || this_chid === undefined) && (selected_group === null || selected_group === undefined)) {
         document.body.classList.add('stac--nochat');
         hideMenu();
         hideHistoryMenu();
