@@ -1437,9 +1437,11 @@ export const setInput = (text)=>{
 };
 
 
+//!DEBUG log events to console
 for (const e of Object.values(event_types)) {
     eventSource.on(e, ()=>console.warn('[_EVENT_]', e, chat.length));
 }
+//!DEBUG log chat length changes
 (async()=>{
     let len = chat.length;
     while (true) {
@@ -1450,3 +1452,43 @@ for (const e of Object.values(event_types)) {
         await delay(100);
     }
 })();
+//!DEBUG .hideChatAvatars mutations
+{
+    // observe document.body for class changes
+    let hca = document.body.classList.contains('hideChatAvatars');
+    const mo = new MutationObserver(()=>{
+        const nhca = document.body.classList.contains('hideChatAvatars');
+        if (nhca != hca) {
+            alert('HIDE CHAT AVATARS');
+            debugger;
+            hca = nhca;
+        }
+    });
+    mo.observe(document.body, { attributes:true });
+    // proxy jQuery addClass function
+    const original_addClass = jQuery.prototype.addClass;
+    jQuery.prototype.addClass = function(...args) {
+        if (args[0].includes('hideChatAvatars')) {
+            console.error('[ADDCLASS]', ...args);
+            debugger;
+        }
+        return original_addClass.bind(this)(...args);
+    };
+    // proxy native classList.add and classList.toggle functions
+    const original_add = DOMTokenList.prototype.add;
+    const original_toggle = DOMTokenList.prototype.toggle;
+    DOMTokenList.prototype.add = function(...args) {
+        if (args.includes('hideChatAvatars')) {
+            console.error('[CLASSLIST.ADD]', ...args);
+            debugger;
+        }
+        return original_add.bind(this)(...args);
+    };
+    DOMTokenList.prototype.toggle = function(...args) {
+        if (args.includes('hideChatAvatars')) {
+            console.error('[CLASSLIST.TOGGLE]', ...args);
+            debugger;
+        }
+        return original_toggle.bind(this)(...args);
+    };
+}
