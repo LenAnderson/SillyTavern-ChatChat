@@ -1492,3 +1492,90 @@ for (const e of Object.values(event_types)) {
         return original_toggle.bind(this)(...args);
     };
 }
+//! extension? - active WI panel
+{
+    const trigger = document.createElement('div'); {
+        trigger.classList.add('stac--wi--trigger');
+        trigger.classList.add('fa-solid', 'fa-fw', 'fa-book-atlas');
+        trigger.style.position = 'absolute';
+        trigger.style.top = '0.125em';
+        trigger.style.right = '0.25em';
+        trigger.style.fontSize = '2em';
+        trigger.style.opacity = '0.25';
+        trigger.style.transition = 'opacity 200ms';
+        trigger.style.cursor = 'pointer';
+        trigger.style.zIndex = '3010';
+        trigger.style.filter = 'drop-shadow(2px 4px 6px black)';
+        trigger.style.display = 'none';
+        trigger.title = 'Active WI';
+        trigger.addEventListener('click', ()=>{
+            panel.style.display = panel.style.display == 'none' ? 'flex' : 'none';
+        });
+        document.body.append(trigger);
+    }
+    const panel = document.createElement('div'); {
+        panel.classList.add('stac--wi--panel');
+        const style = {
+            filter: 'drop-shadow(1px 1px 2px var(--black50a))',
+            zIndex: '3000',
+            overflow: 'auto',
+            borderRadius: '10px',
+            aspectRatio: 'unset',
+            padding: '0.5em',
+            display: 'none',
+            flexDirection: 'column',
+            position: 'absolute',
+            right: '3.5em',
+            top: '1em',
+            fontSize: 'small',
+            maxHeight: 'calc(100vh - 1em)',
+            maxWidth: 'calc((100vw - var(--sheldWidth)) / 2 - 3.5em)',
+            backgroundColor: 'var(--secondaryBg, var(--SmartThemeBlurTintColor))',
+        };
+        for (const [k, v] of Object.entries(style)) {
+            panel.style.setProperty(k.replace(/[A-Z]/g, (c)=>`-${c.toLowerCase()}`), v);
+        }
+        document.body.append(panel);
+    }
+
+    const original_debug = console.debug;
+    console.debug = function(...args) {
+        if (args[0] == '[WI] Found 0 world lore entries. Sorted by strategy') {
+            trigger.style.display = 'none';
+            panel.style.display = 'none';
+            panel.innerHTML = '';
+        }
+        return original_debug.bind(this)(...args);
+    };
+    eventSource.on(event_types.WORLD_INFO_ACTIVATED, (entryList)=>{
+        panel.innerHTML = '';
+        const grouped = Object.groupBy(entryList, (it,idx)=>it.world);
+        trigger.style.display = 'block';
+        for (const [world, entries] of Object.entries(grouped)) {
+            const w = document.createElement('div'); {
+                w.classList.add('stac--wi--world');
+                w.textContent = world;
+                const style = {
+                    fontWeight: 'bold',
+                };
+                for (const [k, v] of Object.entries(style)) {
+                    w.style.setProperty(k.replace(/[A-Z]/g, (c)=>`-${c.toLowerCase()}`), v);
+                }
+                panel.append(w);
+                for (const entry of entries) {
+                    const e = document.createElement('div'); {
+                        e.classList.add('stac--wi--entry');
+                        e.textContent = entry.comment ?? entry.key.join(', ');
+                        const style = {
+                            paddingLeft: '1em',
+                        };
+                        for (const [k, v] of Object.entries(style)) {
+                            e.style.setProperty(k.replace(/[A-Z]/g, (c)=>`-${c.toLowerCase()}`), v);
+                        }
+                        panel.append(e);
+                    }
+                }
+            }
+        }
+    });
+}
