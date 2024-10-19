@@ -1498,8 +1498,8 @@ for (const e of Object.values(event_types)) {
         trigger.classList.add('stac--wi--trigger');
         trigger.classList.add('fa-solid', 'fa-fw', 'fa-book-atlas');
         trigger.style.position = 'absolute';
-        trigger.style.top = '0.125em';
-        trigger.style.right = '0.25em';
+        trigger.style.bottom = '0.125em';
+        trigger.style.left = '0.25em';
         trigger.style.fontSize = '2em';
         trigger.style.opacity = '0.25';
         trigger.style.transition = 'opacity 200ms';
@@ -1507,6 +1507,7 @@ for (const e of Object.values(event_types)) {
         trigger.style.zIndex = '3010';
         trigger.style.filter = 'drop-shadow(2px 4px 6px black)';
         trigger.style.display = 'none';
+        trigger.style.anchorName = '--stac--wiAnchor';
         trigger.title = 'Active WI';
         trigger.addEventListener('click', ()=>{
             panel.style.display = panel.style.display == 'none' ? 'flex' : 'none';
@@ -1517,20 +1518,25 @@ for (const e of Object.values(event_types)) {
         panel.classList.add('stac--wi--panel');
         const style = {
             filter: 'drop-shadow(1px 1px 2px var(--black50a))',
-            zIndex: '3000',
+            zIndex: '30000',
             overflow: 'auto',
             borderRadius: '10px',
             aspectRatio: 'unset',
             padding: '0.5em',
             display: 'none',
             flexDirection: 'column',
-            position: 'absolute',
+            // position: 'absolute',
             right: '3.5em',
             top: '1em',
             fontSize: 'small',
             maxHeight: 'calc(100vh - 1em)',
             maxWidth: 'calc((100vw - var(--sheldWidth)) / 2 - 3.5em)',
             backgroundColor: 'var(--secondaryBg, var(--SmartThemeBlurTintColor))',
+            position: 'fixed',
+            positionAnchor: '--stac--wiAnchor',
+            positionArea: 'top right',
+            positionTryFallbacks: 'flip-block, flip-inline',
+            marginBottom: '-2em',
         };
         for (const [k, v] of Object.entries(style)) {
             panel.style.setProperty(k.replace(/[A-Z]/g, (c)=>`-${c.toLowerCase()}`), v);
