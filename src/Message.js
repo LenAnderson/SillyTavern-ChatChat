@@ -1,8 +1,8 @@
+import { morphdom } from '../../../../../lib.js';
 import { messageFormatting } from '../../../../../script.js';
 import { Popup, POPUP_TYPE } from '../../../../popup.js';
 import { getMessageTimeStamp } from '../../../../RossAscends-mods.js';
 import { delay, escapeRegex, uuidv4 } from '../../../../utils.js';
-import morphdom from '../../../quick-reply/lib/morphdom-esm.js';
 import { getSections, isBusy, setInput, settings, swipeCombiner } from '../index.js';
 import { stringSplice } from './lib/stringSplice.js';
 import { waitForFrame } from './lib/wait.js';
