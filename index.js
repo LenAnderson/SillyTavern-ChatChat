@@ -1492,4 +1492,3 @@ for (const e of Object.values(event_types)) {
         return original_toggle.bind(this)(...args);
     };
 }
-}
