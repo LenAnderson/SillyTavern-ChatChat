@@ -33,6 +33,7 @@ export const MESSAGE_TYPE = {
  * @prop {string} [gen_started] time when the generation started - new Date().toString()
  * @prop {string} [gen_finished] time when the generation finishe - new Date().toString()
  * @prop {ChatMessageExtra} [extra] additional information about the message or swipe
+ * @prop {boolean} [isFavorite] time when the generation finished - new Date().toString()
  */
 /**
  * @typedef ChatMessage
